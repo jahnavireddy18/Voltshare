@@ -1,10 +1,21 @@
-# vnest_app
+# VoltShare (vnest_app)
 
-A new Flutter project.
+India's EV Charging & Host Sharing Platform.
+
+## ⚡ Demo & Hackathon Access Credentials
+
+To test the application during demonstrations or evaluations, use the following credentials:
+
+* **Phone Number**: Enter any valid 10-digit number (e.g., `9876543210`)
+* **Password / Demo OTP**: `123456`
+
+*(In Demo Mode, OTP verification uses the fixed code `123456` and requires no external SMS service).*
+
+---
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+This project is built using Flutter and Dart.
 
 A few resources to get you started if this is your first Flutter project:
 
@@ -16,4 +27,4 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 
-Made by team LazyCoders
+Made by team **LazyCoders**
