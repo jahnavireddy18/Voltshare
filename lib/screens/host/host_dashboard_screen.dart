@@ -222,6 +222,28 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
             size: 20,
           ),
         ),
+        const SizedBox(width: 8),
+        // Logout button
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceDark,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderDark),
+          ),
+          child: IconButton(
+            key: const Key('host_logout_button'),
+            padding: EdgeInsets.zero,
+            tooltip: 'Log Out',
+            icon: const Icon(
+              Icons.logout,
+              color: AppColors.error,
+              size: 20,
+            ),
+            onPressed: () => AuthProvider.showLogoutDialog(context),
+          ),
+        ),
       ],
     ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.05);
   }

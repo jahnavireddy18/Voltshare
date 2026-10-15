@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:vnest_app/core/models/society_admin_models.dart';
+import 'package:vnest_app/core/providers/auth_provider.dart';
 import 'package:vnest_app/core/services/society_admin_service.dart';
 import 'package:vnest_app/core/theme/app_theme.dart';
 
@@ -85,7 +86,7 @@ class _SocietyAdminDashboardScreenState extends State<SocietyAdminDashboardScree
         centerTitle: true,
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 16),
+            margin: const EdgeInsets.only(right: 8),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.secondary.withValues(alpha: 0.15),
@@ -96,6 +97,13 @@ class _SocietyAdminDashboardScreenState extends State<SocietyAdminDashboardScree
               fontSize: 9, color: AppColors.secondary,
             )),
           ),
+          IconButton(
+            key: const Key('admin_logout_button'),
+            tooltip: 'Log Out',
+            icon: const Icon(Icons.logout, color: AppColors.error),
+            onPressed: () => AuthProvider.showLogoutDialog(context),
+          ),
+          const SizedBox(width: 8),
         ],
         bottom: TabBar(
           controller: _tabController,

@@ -116,9 +116,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                     icon: Icon(Icons.arrow_back, color: cs.onSurface),
                   ),
-                  IconButton(
-                    onPressed: () => context.push('/privacy'),
-                    icon: Icon(Icons.settings, color: cs.onSurface),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => context.push('/privacy'),
+                        icon: Icon(Icons.settings, color: cs.onSurface),
+                      ),
+                      IconButton(
+                        key: const Key('profile_logout_icon_button'),
+                        tooltip: 'Log Out',
+                        onPressed: () => AuthProvider.showLogoutDialog(context),
+                        icon: Icon(Icons.logout, color: cs.error),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -457,22 +467,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
       {'icon': Icons.notifications, 'label': 'Notifications', 'route': '/notifications'},
       {'icon': Icons.help, 'label': 'Help & Support', 'route': '/help-support'},
       {'icon': Icons.lock, 'label': 'Privacy', 'route': '/privacy'},
+      {'icon': Icons.logout, 'label': 'Log Out', 'route': 'logout'},
     ];
 
     return Column(
       children: settings.asMap().entries.map((e) {
         final setting = e.value;
         final route = setting['route'] as String;
+        final isLogout = route == 'logout';
         final isHighlighted = route == '/carplay' || route == '/host-telemetry';
         final highlightColor = route == '/host-telemetry' ? AppColors.warning : AppColors.primary;
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Material(
-            color: isHighlighted ? highlightColor.withValues(alpha: 0.1) : cs.surfaceContainer,
+            color: isLogout
+                ? cs.error.withValues(alpha: 0.08)
+                : (isHighlighted ? highlightColor.withValues(alpha: 0.1) : cs.surfaceContainer),
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               onTap: () {
-                if (route.isNotEmpty) {
+                if (isLogout) {
+                  AuthProvider.showLogoutDialog(context);
+                } else if (route.isNotEmpty) {
                   context.push(route);
                 }
               },
@@ -482,7 +498,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isHighlighted ? highlightColor.withValues(alpha: 0.3) : cs.outlineVariant
+                    color: isLogout
+                        ? cs.error.withValues(alpha: 0.3)
+                        : (isHighlighted ? highlightColor.withValues(alpha: 0.3) : cs.outlineVariant),
                   ),
                 ),
                 child: Row(
@@ -491,17 +509,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: 40, height: 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isHighlighted ? highlightColor : cs.surfaceContainerHighest,
+                        color: isLogout
+                            ? cs.error.withValues(alpha: 0.15)
+                            : (isHighlighted ? highlightColor : cs.surfaceContainerHighest),
                       ),
-                      child: Icon(setting['icon'] as IconData, color: isHighlighted ? Colors.black : cs.onSurface, size: 20),
+                      child: Icon(
+                        setting['icon'] as IconData,
+                        color: isLogout ? cs.error : (isHighlighted ? Colors.black : cs.onSurface),
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: Text(setting['label'] as String, style: GoogleFonts.manrope(
-                        fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface,
-                      )),
+                      child: Text(
+                        setting['label'] as String,
+                        style: GoogleFonts.manrope(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isLogout ? cs.error : cs.onSurface,
+                        ),
+                      ),
                     ),
-                    Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+                    Icon(Icons.chevron_right, color: isLogout ? cs.error : cs.onSurfaceVariant),
                   ],
                 ),
               ),
@@ -518,12 +547,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       children: [
         TextButton(
-          onPressed: () async {
-            await AuthProvider().signOut();
-            if (context.mounted) {
-              context.go('/login');
-            }
-          },
+          key: const Key('profile_footer_logout_button'),
+          onPressed: () => AuthProvider.showLogoutDialog(context),
           child: Text('Sign out', style: GoogleFonts.manrope(
             color: cs.onSurfaceVariant, fontWeight: FontWeight.w500,
           )),

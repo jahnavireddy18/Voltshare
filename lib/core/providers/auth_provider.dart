@@ -1,4 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vnest_app/core/config/auth_mode_config.dart';
 import 'package:vnest_app/core/enums/app_enums.dart';
@@ -30,9 +34,11 @@ class AuthProvider extends ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoading = true;
   bool _isInitialized = false;
+  bool _isLoggingOut = false;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
+  bool get isLoggingOut => _isLoggingOut;
   bool get isAuthenticated => _currentUser != null;
   bool get isInitialized => _isInitialized;
   UserRole get userRole => _currentUser?.role ?? UserRole.user;
@@ -193,18 +199,145 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Sign out.
+  /// Sign out reliably across both Demo and Production/Firebase modes.
+  /// Clears local session, SharedPreferences, cached profile, and notifies listeners.
+  /// Robust against network and offline errors.
   Future<void> signOut() async {
-    if (AuthModeConfig.isDemoMode) {
-      await _demoService.signOut();
-      _currentUser = null;
-      notifyListeners();
-      return;
-    }
-
-    await _authService.signOut();
-    _currentUser = null;
+    if (_isLoggingOut) return;
+    _isLoggingOut = true;
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      if (AuthModeConfig.isDemoMode) {
+        await _demoService.signOut();
+      } else {
+        try {
+          await _authService.signOut();
+        } catch (e) {
+          debugPrint('AuthService.signOut() error: $e');
+        }
+      }
+    } finally {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('demo_auth_active_user_id');
+      } catch (e) {
+        debugPrint('SharedPreferences cleanup error: $e');
+      }
+      _currentUser = null;
+      _isLoading = false;
+      _isLoggingOut = false;
+      notifyListeners();
+    }
+  }
+
+  /// Show a consistent, role-agnostic logout confirmation dialog,
+  /// execute sign-out, clear navigation history, and redirect cleanly to /login.
+  static Future<void> showLogoutDialog(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) {
+        final cs = Theme.of(dialogCtx).colorScheme;
+        return AlertDialog(
+          backgroundColor: cs.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: cs.error.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.logout_rounded, color: cs.error, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Log Out',
+                style: GoogleFonts.sora(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: cs.onSurface,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to log out of VoltShare? You will need to sign in again to access your account.',
+            style: GoogleFonts.manrope(
+              fontSize: 14,
+              color: cs.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+            FilledButton(
+              key: const Key('confirm_logout_button'),
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.error,
+                foregroundColor: cs.onError,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () => Navigator.of(dialogCtx).pop(true),
+              child: Text(
+                'Log Out',
+                style: GoogleFonts.manrope(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        await AuthProvider().signOut();
+        if (context.mounted) {
+          context.go('/login');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Logged out successfully',
+                    style: GoogleFonts.manrope(fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFF1E293B),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to sign out: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   /// Reset password.

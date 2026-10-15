@@ -25,7 +25,7 @@ class AuthGuard {
 
     // If user is not logged in and trying to access a protected route
     if (!isLoggedIn && !isAuthRoute) {
-      return '/login?from=$currentPath';
+      return '/login';
     }
 
     // If user is logged in:

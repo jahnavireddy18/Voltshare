@@ -325,10 +325,8 @@ class HostSettingsScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () async {
-                await AuthProvider().signOut();
-                if (context.mounted) context.go('/login');
-              },
+              key: const Key('host_settings_logout_button'),
+              onPressed: () => AuthProvider.showLogoutDialog(context),
               style: OutlinedButton.styleFrom(
                 foregroundColor: cs.error,
                 side: BorderSide(color: cs.error),
