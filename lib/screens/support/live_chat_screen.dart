@@ -98,7 +98,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: cs.onSurface),
-          onPressed: () => _handleBack(context),
+          onPressed: _handleBack,
         ),
         title: Column(
           children: [
