@@ -113,7 +113,7 @@ class AuthProvider extends ChangeNotifier {
     UserRole? role,
   }) async {
     if (!AuthModeConfig.isDemoMode) {
-      throw const UnsupportedError(
+      throw UnsupportedError(
         'Flexible Demo OTP verification is disabled in production mode. '
         'Real phone authentication with SMS delivery is required.',
       );
