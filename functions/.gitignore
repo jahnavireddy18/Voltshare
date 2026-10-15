@@ -1,0 +1,6 @@
+# Python Cloud Functions runtime (managed by Firebase deploy)
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.local

@@ -1,0 +1,30 @@
+{
+  "model_type": "GradientBoostingRegressor",
+  "features": [
+    "hour_of_day",
+    "day_of_week",
+    "charger_location_cluster",
+    "charger_power_tier",
+    "rolling_booking_count_last_2_hours"
+  ],
+  "target": "booking_probability",
+  "metrics": {
+    "r2": 0.9338,
+    "mae": 0.0432,
+    "rmse": 0.0559,
+    "train_samples": 40000,
+    "test_samples": 10000
+  },
+  "surge_formula": "1.0 + demandScore * 0.8",
+  "label_thresholds": {
+    "high": 0.66,
+    "medium": 0.33
+  },
+  "input_mapping": {
+    "hour": "hour_of_day",
+    "day": "day_of_week",
+    "locationCluster": "charger_location_cluster",
+    "powerTier": "charger_power_tier",
+    "rollingBookings": "rolling_booking_count_last_2_hours"
+  }
+}
