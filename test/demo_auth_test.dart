@@ -73,7 +73,7 @@ void main() {
 
       // Incorrect OTP throws
       expect(
-        () => provider.verifyDemoOtp(
+        provider.verifyDemoOtp(
           phoneNumber: '9876543210',
           otp: '000000',
         ),
