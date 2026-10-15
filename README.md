@@ -6,10 +6,11 @@ India's EV Charging & Host Sharing Platform.
 
 To test the application during demonstrations or evaluations, use the following credentials:
 
-* **Phone Number**: Enter any valid 10-digit number (e.g., `9876543210`)
-* **Password / Demo OTP**: `123456`
+* **Phone Number**: Enter any valid 10-digit Indian mobile number (e.g., `9876543210`, `8765432109`, `+91 98765 43210`)
+* **Demo OTP**: Enter **any 4-digit numeric OTP** from `0000` to `9999` (e.g., `1234`, `5678`, `0047`)
+* **Email & Password (Optional)**: `demo@voltshare.app` / `123456`
 
-*(In Demo Mode, OTP verification uses the fixed code `123456` and requires no external SMS service).*
+> **Security Notice**: Arbitrary OTP acceptance is strictly a hackathon demo feature enabled in `--dart-define=AUTH_MODE=demo` (default). In production builds (`--dart-define=AUTH_MODE=production`), real Firebase Phone Authentication with carrier SMS delivery is enforced.
 
 ---
 

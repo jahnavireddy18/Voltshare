@@ -54,15 +54,20 @@ class _SignupScreenState extends State<SignupScreen> {
         setState(() => _errorMessage = 'Please enter your phone number.');
         return;
       }
-      if (!DemoAuthService.isValidPhone(phone)) {
+      if (!DemoAuthService.isValidIndianPhone(phone) &&
+          !DemoAuthService.isValidPhone(phone)) {
         setState(() => _errorMessage =
-            'Please enter a valid phone number (7-15 digits).');
+            'Please enter a valid 10-digit Indian mobile number.');
         return;
       }
 
+      final normalized = DemoAuthService.isValidIndianPhone(phone)
+          ? DemoAuthService.normalizeIndianPhone(phone)
+          : phone;
+
       setState(() => _errorMessage = null);
       context.push('/otp-verification', extra: {
-        'phoneNumber': phone,
+        'phoneNumber': normalized,
         'name': name,
         'role': _selectedRole,
       });

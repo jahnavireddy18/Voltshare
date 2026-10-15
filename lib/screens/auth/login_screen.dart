@@ -37,17 +37,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handlePhoneContinue() {
+    if (_isLoading) return;
     final rawPhone = _phoneController.text;
-    final cleaned = DemoAuthService.normalizePhone(rawPhone);
+    final cleaned = DemoAuthService.normalizeIndianPhone(rawPhone);
 
     if (cleaned.isEmpty) {
-      setState(() => _errorMessage = 'Please enter your phone number.');
+      setState(() => _errorMessage = 'Please enter your 10-digit mobile number.');
       return;
     }
 
-    if (!DemoAuthService.isValidPhone(cleaned)) {
+    if (!DemoAuthService.isValidIndianPhone(rawPhone)) {
       setState(() => _errorMessage =
-          'Please enter a valid phone number (7-15 digits).');
+          'Please enter a valid 10-digit Indian mobile number.');
       return;
     }
 
@@ -206,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'DEMO MODE: Enter any phone number to receive instant demo OTP (123456)',
+                                'DEMO MODE: Enter any 10-digit mobile number + any 4-digit OTP (0000-9999)',
                                 style: GoogleFonts.manrope(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -351,7 +352,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (_isPhoneAuth) ...[
                       VsTextField(
                         controller: _phoneController,
-                        hint: 'Phone number (e.g. +91 98765 43210)',
+                        hint: '10-digit mobile number (e.g. 98765 43210)',
                         prefixIcon: Icons.phone_android_outlined,
                         keyboardType: TextInputType.phone,
                       ).animate().fadeIn().slideY(begin: 0.1),

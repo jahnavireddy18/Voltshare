@@ -27,8 +27,8 @@ class OtpVerificationScreen extends StatefulWidget {
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+      List.generate(4, (_) => TextEditingController());
+  final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
   int _activeIndex = 0;
   int _resendTimer = 30;
   Timer? _timer;
@@ -75,7 +75,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         _activeIndex = index;
         _errorMessage = null;
       });
-      if (index < 5) {
+      if (index < 3) {
         _focusNodes[index + 1].requestFocus();
       } else {
         _focusNodes[index].unfocus();
@@ -94,21 +94,27 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   void _fillDemoOtp() {
-    const demo = AuthModeConfig.demoOtp;
-    for (int i = 0; i < 6 && i < demo.length; i++) {
+    const demo = AuthModeConfig.defaultDemoOtp;
+    for (int i = 0; i < 4 && i < demo.length; i++) {
       _controllers[i].text = demo[i];
     }
     setState(() {
-      _activeIndex = 5;
+      _activeIndex = 3;
       _errorMessage = null;
     });
     _verifyOtp();
   }
 
   Future<void> _verifyOtp() async {
-    final otp = _controllers.map((c) => c.text).join();
-    if (otp.length < 6) {
-      setState(() => _errorMessage = 'Please enter all 6 digits of the OTP.');
+    if (_isLoading) return;
+    final otp = _controllers.map((c) => c.text.trim()).join();
+    if (otp.length < 4) {
+      setState(() => _errorMessage = 'Please enter all 4 digits of the OTP.');
+      return;
+    }
+    if (!RegExp(r'^[0-9]{4}$').hasMatch(otp)) {
+      setState(() => _errorMessage =
+          'Please enter a valid 4-digit numeric OTP (0000-9999).');
       return;
     }
 
@@ -132,7 +138,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       setState(() {
         _errorMessage = e is FormatException
             ? e.message
-            : 'Invalid OTP. In demo mode, enter 123456.';
+            : 'Invalid OTP. Please enter any 4-digit code (0000-9999).';
       });
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -231,7 +237,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'No SMS sent · Use demo OTP 123456',
+                                    'No SMS sent · Enter ANY 4-digit OTP (0000-9999)',
                                     style: GoogleFonts.manrope(
                                       fontSize: 13,
                                       color: cs.onSurface,
@@ -267,7 +273,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     Text(
                       widget.phoneNumber.isNotEmpty
                           ? "Verification code for ${widget.phoneNumber}"
-                          : "Enter the 6-digit verification code.",
+                          : "Enter the 4-digit verification code.",
                       style: GoogleFonts.manrope(
                         fontSize: 15,
                         color: cs.onSurface.withValues(alpha: 0.7),
@@ -311,15 +317,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       const SizedBox(height: 16),
                     ],
 
-                    // 6-digit OTP Input
+                    // 4-digit OTP Input
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(6, (index) {
+                      children: List.generate(4, (index) {
                         final isActive = _focusNodes[index].hasFocus ||
                             index == _activeIndex;
                         return Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
                             child: KeyboardListener(
                               focusNode: FocusNode(),
                               onKeyEvent: (event) =>
@@ -400,7 +406,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                   size: 15, color: AppColors.primary),
                               const SizedBox(width: 6),
                               Text(
-                                'Tap to autofill 123456',
+                                'Tap to autofill 1234',
                                 style: GoogleFonts.manrope(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,

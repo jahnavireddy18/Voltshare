@@ -23,8 +23,27 @@ class DemoAuthService {
     return raw.replaceAll(RegExp(r'[\s\-\(\)]'), '').trim();
   }
 
-  /// Basic phone validation: 7-15 digits with optional '+' prefix.
+  /// Strip country code (+91) or leading zero to normalize a 10-digit Indian phone number.
+  static String normalizeIndianPhone(String raw) {
+    var digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length == 12 && digits.startsWith('91')) {
+      digits = digits.substring(2);
+    } else if (digits.length == 11 && digits.startsWith('0')) {
+      digits = digits.substring(1);
+    }
+    return digits;
+  }
+
+  /// Validation: exactly 10 numeric digits for Indian mobile numbers.
+  static bool isValidIndianPhone(String phone) {
+    final cleaned = normalizeIndianPhone(phone);
+    return cleaned.length == 10 && RegExp(r'^[0-9]{10}$').hasMatch(cleaned);
+  }
+
+  /// Basic phone validation: 7-15 digits with optional '+' prefix,
+  /// or valid 10-digit Indian mobile number.
   static bool isValidPhone(String phone) {
+    if (isValidIndianPhone(phone)) return true;
     final cleaned = normalizePhone(phone);
     if (cleaned.isEmpty) return false;
     final regex = RegExp(r'^\+?[0-9]{7,15}$');
@@ -54,7 +73,9 @@ class DemoAuthService {
 
   /// Get a demo user profile by phone number.
   Future<UserModel?> getUserByPhone(String phone) async {
-    final cleaned = normalizePhone(phone);
+    final cleaned = isValidIndianPhone(phone)
+        ? normalizeIndianPhone(phone)
+        : normalizePhone(phone);
     final id = 'demo_$cleaned';
     return getUserById(id);
   }
@@ -68,7 +89,9 @@ class DemoAuthService {
     String? name,
     UserRole? role,
   }) async {
-    final cleaned = normalizePhone(phone);
+    final cleaned = isValidIndianPhone(phone)
+        ? normalizeIndianPhone(phone)
+        : normalizePhone(phone);
     final existing = await getUserByPhone(cleaned);
     final prefs = await SharedPreferences.getInstance();
 

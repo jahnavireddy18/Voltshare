@@ -12,16 +12,23 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  group('DemoAuthService Tests', () {
-    test('Phone validation accepts valid formats and rejects invalid ones', () {
-      expect(DemoAuthService.isValidPhone('9876543210'), isTrue);
-      expect(DemoAuthService.isValidPhone('+919876543210'), isTrue);
-      expect(DemoAuthService.isValidPhone('+91 98765-43210'), isTrue);
-      expect(DemoAuthService.isValidPhone('1234567'), isTrue);
+  group('DemoAuthService Phone Validation Tests', () {
+    test('Accepts valid 10-digit Indian numbers and normalizes them', () {
+      expect(DemoAuthService.isValidIndianPhone('9876543210'), isTrue);
+      expect(DemoAuthService.isValidIndianPhone('+919876543210'), isTrue);
+      expect(DemoAuthService.isValidIndianPhone('+91 98765-43210'), isTrue);
+      expect(DemoAuthService.isValidIndianPhone('09876543210'), isTrue);
 
-      expect(DemoAuthService.isValidPhone(''), isFalse);
-      expect(DemoAuthService.isValidPhone('abc'), isFalse);
-      expect(DemoAuthService.isValidPhone('12345'), isFalse); // under 7 digits
+      expect(DemoAuthService.normalizeIndianPhone('+91 98765-43210'), equals('9876543210'));
+      expect(DemoAuthService.normalizeIndianPhone('09876543210'), equals('9876543210'));
+    });
+
+    test('Rejects incomplete or invalid phone numbers', () {
+      expect(DemoAuthService.isValidIndianPhone(''), isFalse);
+      expect(DemoAuthService.isValidIndianPhone('abc'), isFalse);
+      expect(DemoAuthService.isValidIndianPhone('987654321'), isFalse); // 9 digits
+      expect(DemoAuthService.isValidIndianPhone('12345'), isFalse); // under 10 digits
+      expect(DemoAuthService.isValidIndianPhone('9876543210987'), isFalse); // > 12 digits
     });
 
     test('New phone number creates a demo profile', () async {
@@ -37,7 +44,6 @@ void main() {
       expect(user.phone, equals('9876543210'));
       expect(user.role, equals(UserRole.user));
 
-      // Saved session matches
       final saved = await service.getSavedSession();
       expect(saved?.id, equals(user.id));
     });
@@ -57,7 +63,7 @@ void main() {
       expect(user2.name, equals('Original Name'));
     });
 
-    test('Sign out clears active session', () async {
+    test('Sign out clears active session in DemoAuthService', () async {
       final service = DemoAuthService();
       await service.authenticateWithPhone(phone: '9876543210');
       expect(await service.getSavedSession(), isNotNull);
@@ -67,37 +73,100 @@ void main() {
     });
   });
 
-  group('AuthProvider Demo Mode Tests', () {
-    test('Accepts 123456 and rejects incorrect OTP', () async {
+  group('Flexible 4-Digit Demo OTP & Role Tests', () {
+    test('AuthModeConfig validates 4-digit numeric OTPs and preserves leading zeros', () {
+      expect(AuthModeConfig.isValidDemoOtp('1234'), isTrue);
+      expect(AuthModeConfig.isValidDemoOtp('5678'), isTrue);
+      expect(AuthModeConfig.isValidDemoOtp('0000'), isTrue);
+      expect(AuthModeConfig.isValidDemoOtp('9999'), isTrue);
+      expect(AuthModeConfig.isValidDemoOtp('0047'), isTrue); // Leading zeros preserved
+
+      // Invalid OTPs
+      expect(AuthModeConfig.isValidDemoOtp(''), isFalse);
+      expect(AuthModeConfig.isValidDemoOtp('123'), isFalse); // 3 digits
+      expect(AuthModeConfig.isValidDemoOtp('12345'), isFalse); // 5 digits
+      expect(AuthModeConfig.isValidDemoOtp('abcd'), isFalse); // Non-numeric
+    });
+
+    test('Scenario 1: Any valid 10-digit phone number with OTP 1234 succeeds', () async {
       final provider = AuthProvider();
-
-      // Incorrect OTP throws
-      expect(
-        provider.verifyDemoOtp(
-          phoneNumber: '9876543210',
-          otp: '000000',
-        ),
-        throwsA(isA<FormatException>()),
-      );
-
-      // Correct OTP succeeds
       final user = await provider.verifyDemoOtp(
         phoneNumber: '9876543210',
-        otp: AuthModeConfig.demoOtp,
+        otp: '1234',
       );
+
       expect(user.phone, equals('9876543210'));
       expect(provider.isAuthenticated, isTrue);
       expect(provider.currentUser?.id, equals('demo_9876543210'));
 
-      // Sign out
       await provider.signOut();
-      expect(provider.isAuthenticated, isFalse);
-      expect(provider.currentUser, isNull);
     });
 
-    test('Driver logout properly clears session and auth state', () async {
+    test('Scenario 2: Another phone number with OTP 5678 succeeds', () async {
       final provider = AuthProvider();
-      await provider.verifyDemoOtp(phoneNumber: '9876543211', otp: '123456');
+      final user = await provider.verifyDemoOtp(
+        phoneNumber: '8765432109',
+        otp: '5678',
+      );
+
+      expect(user.phone, equals('8765432109'));
+      expect(provider.isAuthenticated, isTrue);
+
+      await provider.signOut();
+    });
+
+    test('Scenario 3: OTP with leading zeros such as 0047 succeeds', () async {
+      final provider = AuthProvider();
+      final user = await provider.verifyDemoOtp(
+        phoneNumber: '9123456780',
+        otp: '0047',
+      );
+
+      expect(user.phone, equals('9123456780'));
+      expect(provider.isAuthenticated, isTrue);
+
+      await provider.signOut();
+    });
+
+    test('Scenario 4: Incomplete or invalid phone number throws FormatException', () async {
+      final provider = AuthProvider();
+
+      expect(
+        provider.verifyDemoOtp(phoneNumber: '12345', otp: '1234'),
+        throwsA(isA<FormatException>()),
+      );
+
+      expect(
+        provider.verifyDemoOtp(phoneNumber: '987654321', otp: '1234'),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('Scenario 5: OTP with fewer or more than 4 digits throws FormatException', () async {
+      final provider = AuthProvider();
+
+      // Under 4 digits
+      expect(
+        provider.verifyDemoOtp(phoneNumber: '9876543210', otp: '123'),
+        throwsA(isA<FormatException>()),
+      );
+
+      // Over 4 digits
+      expect(
+        provider.verifyDemoOtp(phoneNumber: '9876543210', otp: '12345'),
+        throwsA(isA<FormatException>()),
+      );
+
+      // Non-numeric
+      expect(
+        provider.verifyDemoOtp(phoneNumber: '9876543210', otp: 'abcd'),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('Scenario 6: Driver login then logout properly clears state', () async {
+      final provider = AuthProvider();
+      await provider.verifyDemoOtp(phoneNumber: '9876543211', otp: '1234');
       await provider.setRole(UserRole.user);
 
       expect(provider.isAuthenticated, isTrue);
@@ -116,9 +185,9 @@ void main() {
       expect(prefs.getString('demo_auth_active_user_id'), isNull);
     });
 
-    test('Charger Host logout properly clears session and auth state', () async {
+    test('Scenario 7: Charger Host login then logout properly clears state', () async {
       final provider = AuthProvider();
-      await provider.verifyDemoOtp(phoneNumber: '9876543212', otp: '123456');
+      await provider.verifyDemoOtp(phoneNumber: '9876543212', otp: '5678');
       await provider.setRole(UserRole.host);
 
       expect(provider.isAuthenticated, isTrue);
@@ -133,9 +202,9 @@ void main() {
       expect(saved, isNull);
     });
 
-    test('Society Admin logout properly clears session and auth state', () async {
+    test('Scenario 8: Society Admin login then logout properly clears state', () async {
       final provider = AuthProvider();
-      await provider.verifyDemoOtp(phoneNumber: '9876543213', otp: '123456');
+      await provider.verifyDemoOtp(phoneNumber: '9876543213', otp: '0047');
       await provider.setRole(UserRole.admin);
 
       expect(provider.isAuthenticated, isTrue);
@@ -150,16 +219,16 @@ void main() {
       expect(saved, isNull);
     });
 
-    test('Can re-authenticate with valid credentials after logout', () async {
+    test('Scenario 9: Can re-authenticate with valid credentials after logout', () async {
       final provider = AuthProvider();
-      await provider.verifyDemoOtp(phoneNumber: '9876543214', otp: '123456');
+      await provider.verifyDemoOtp(phoneNumber: '9876543214', otp: '9999');
       expect(provider.isAuthenticated, isTrue);
 
       await provider.signOut();
       expect(provider.isAuthenticated, isFalse);
 
-      // Log in again
-      final user = await provider.verifyDemoOtp(phoneNumber: '9876543215', otp: '123456');
+      // Log in again with different number and OTP
+      final user = await provider.verifyDemoOtp(phoneNumber: '9876543215', otp: '0000');
       expect(provider.isAuthenticated, isTrue);
       expect(user.phone, equals('9876543215'));
     });

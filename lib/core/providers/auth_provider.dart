@@ -99,23 +99,48 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Verify Demo OTP (123456) and authenticate the user.
+  /// Verify Demo OTP: accepts ANY 4-digit numeric OTP (0000-9999) in demo mode
+  /// and authenticates the user with their normalized 10-digit Indian phone number.
+  ///
+  /// CRITICAL SECURITY NOTICE:
+  /// Arbitrary OTP acceptance is restricted strictly to Demo Mode (`AUTH_MODE=demo`).
+  /// In Production Mode (`AUTH_MODE=production`), this method throws an error
+  /// and the real Firebase Authentication flow must be used.
   Future<UserModel> verifyDemoOtp({
     required String phoneNumber,
     required String otp,
     String? name,
     UserRole? role,
   }) async {
+    if (!AuthModeConfig.isDemoMode) {
+      throw const UnsupportedError(
+        'Flexible Demo OTP verification is disabled in production mode. '
+        'Real phone authentication with SMS delivery is required.',
+      );
+    }
+
+    final trimmedOtp = otp.trim();
+    if (!AuthModeConfig.isValidDemoOtp(trimmedOtp)) {
+      if (trimmedOtp.length != 4) {
+        throw const FormatException('Please enter a 4-digit OTP.');
+      }
+      throw const FormatException(
+          'Invalid OTP. Please enter a 4-digit numeric code (0000-9999).');
+    }
+
+    if (!DemoAuthService.isValidIndianPhone(phoneNumber)) {
+      throw const FormatException(
+          'Please enter a valid 10-digit Indian mobile number.');
+    }
+
+    final normalizedPhone = DemoAuthService.normalizeIndianPhone(phoneNumber);
+
     _isLoading = true;
     notifyListeners();
 
     try {
-      if (otp.trim() != AuthModeConfig.demoOtp) {
-        throw const FormatException('Invalid OTP. In demo mode, enter 123456.');
-      }
-
       final user = await _demoService.authenticateWithPhone(
-        phone: phoneNumber,
+        phone: normalizedPhone,
         name: name,
         role: role,
       );
