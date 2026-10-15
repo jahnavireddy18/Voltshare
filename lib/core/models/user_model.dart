@@ -37,6 +37,18 @@ class UserModel {
         'updatedAt': Timestamp.fromDate(updatedAt),
       };
 
+  Map<String, dynamic> toLocalJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'role': role.name,
+        'profileImageUrl': profileImageUrl,
+        'status': status.name,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+      };
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String? ?? '',
@@ -81,6 +93,7 @@ class UserModel {
   static DateTime _parseTimestamp(dynamic value) {
     if (value is Timestamp) return value.toDate();
     if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
     return DateTime.now();
   }
 }

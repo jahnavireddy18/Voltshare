@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vnest_app/core/config/auth_mode_config.dart';
 import 'package:vnest_app/core/enums/app_enums.dart';
 import 'package:vnest_app/core/providers/auth_provider.dart';
 import 'package:vnest_app/core/services/auth_service.dart';
+import 'package:vnest_app/core/services/demo_auth_service.dart';
 import 'package:vnest_app/core/theme/app_theme.dart';
 import 'package:vnest_app/widgets/common/vs_text_field.dart';
 import 'package:vnest_app/widgets/common/vs_button.dart';
@@ -17,17 +19,42 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  bool _isPhoneAuth = AuthModeConfig.isDemoMode;
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
+    _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _handlePhoneContinue() {
+    final rawPhone = _phoneController.text;
+    final cleaned = DemoAuthService.normalizePhone(rawPhone);
+
+    if (cleaned.isEmpty) {
+      setState(() => _errorMessage = 'Please enter your phone number.');
+      return;
+    }
+
+    if (!DemoAuthService.isValidPhone(cleaned)) {
+      setState(() => _errorMessage =
+          'Please enter a valid phone number (7-15 digits).');
+      return;
+    }
+
+    setState(() => _errorMessage = null);
+    context.push('/otp-verification', extra: {
+      'phoneNumber': cleaned,
+    });
   }
 
   Future<void> _handleLogin() async {
@@ -52,7 +79,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // Navigate based on role.
       switch (user.role) {
         case UserRole.admin:
           context.go('/admin-dashboard');
@@ -88,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 36),
                     // Title
                     Text(
                       "INDIA'S #1",
@@ -158,16 +184,136 @@ class _LoginScreenState extends State<LoginScreen> {
                         .animate()
                         .fadeIn(delay: 400.ms)
                         .scale(begin: const Offset(0.8, 0.8)),
-                    const SizedBox(height: 40),
-                    Text(
-                      'Log in to your account',
-                      style: GoogleFonts.manrope(
-                        color: cs.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
+                    const SizedBox(height: 32),
+
+                    // Demo Mode Banner
+                    if (AuthModeConfig.isDemoMode)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.bolt,
+                                color: AppColors.primary, size: 22),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'DEMO MODE: Enter any phone number to receive instant demo OTP (123456)',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 450.ms),
+
+                    // Auth Method Switcher
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() {
+                                _isPhoneAuth = true;
+                                _errorMessage = null;
+                              }),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: _isPhoneAuth
+                                      ? cs.surface
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: _isPhoneAuth
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.05),
+                                            blurRadius: 4,
+                                          )
+                                        ]
+                                      : null,
+                                ),
+                                child: Text(
+                                  'Phone (OTP)',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.manrope(
+                                    fontWeight: _isPhoneAuth
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    fontSize: 14,
+                                    color: _isPhoneAuth
+                                        ? cs.onSurface
+                                        : cs.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() {
+                                _isPhoneAuth = false;
+                                _errorMessage = null;
+                              }),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: !_isPhoneAuth
+                                      ? cs.surface
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: !_isPhoneAuth
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.05),
+                                            blurRadius: 4,
+                                          )
+                                        ]
+                                      : null,
+                                ),
+                                child: Text(
+                                  'Email & Password',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.manrope(
+                                    fontWeight: !_isPhoneAuth
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    fontSize: 14,
+                                    color: !_isPhoneAuth
+                                        ? cs.onSurface
+                                        : cs.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ).animate().fadeIn(delay: 500.ms),
-                    const SizedBox(height: 24),
+
+                    const SizedBox(height: 20),
 
                     // Error message
                     if (_errorMessage != null) ...[
@@ -191,6 +337,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: GoogleFonts.manrope(
                                   color: cs.error,
                                   fontSize: 13,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
@@ -200,62 +347,78 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 16),
                     ],
 
-                    // Email input
-                    VsTextField(
-                      controller: _emailController,
-                      hint: 'Email address',
-                      prefixIcon: Icons.email_outlined,
-                      keyboardType: TextInputType.emailAddress,
-                    ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.1),
-                    const SizedBox(height: 12),
-
-                    // Password input
-                    VsTextField(
-                      controller: _passwordController,
-                      hint: 'Password',
-                      prefixIcon: Icons.lock_outline,
-                      obscureText: _obscurePassword,
-                      suffix: IconButton(
-                        onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword),
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          size: 20,
+                    // Phone Auth Form
+                    if (_isPhoneAuth) ...[
+                      VsTextField(
+                        controller: _phoneController,
+                        hint: 'Phone number (e.g. +91 98765 43210)',
+                        prefixIcon: Icons.phone_android_outlined,
+                        keyboardType: TextInputType.phone,
+                      ).animate().fadeIn().slideY(begin: 0.1),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: VsButton(
+                          label: 'Continue with OTP',
+                          onPressed: _handlePhoneContinue,
+                          isLoading: _isLoading,
+                          width: double.infinity,
                         ),
-                      ),
-                    ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.1),
-                    const SizedBox(height: 12),
-
-                    // Forgot password
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () => context.push('/forgot-password'),
-                        child: Text(
-                          'Forgot password?',
-                          style: GoogleFonts.manrope(
-                            color: cs.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                      ).animate().fadeIn().slideY(begin: 0.1),
+                    ] else ...[
+                      // Email Auth Form
+                      VsTextField(
+                        controller: _emailController,
+                        hint: 'Email address',
+                        prefixIcon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                      ).animate().fadeIn().slideY(begin: 0.1),
+                      const SizedBox(height: 12),
+                      VsTextField(
+                        controller: _passwordController,
+                        hint: 'Password',
+                        prefixIcon: Icons.lock_outline,
+                        obscureText: _obscurePassword,
+                        suffix: IconButton(
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            size: 20,
                           ),
                         ),
-                      ),
-                    ).animate().fadeIn(delay: 800.ms),
-                    const SizedBox(height: 24),
-
-                    // Login button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: VsButton(
-                        label: 'Log In',
-                        onPressed: _handleLogin,
-                        isLoading: _isLoading,
+                      ).animate().fadeIn().slideY(begin: 0.1),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () => context.push('/forgot-password'),
+                          child: Text(
+                            'Forgot password?',
+                            style: GoogleFonts.manrope(
+                              color: cs.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ).animate().fadeIn(),
+                      const SizedBox(height: 20),
+                      SizedBox(
                         width: double.infinity,
-                      ),
-                    ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.1),
+                        height: 56,
+                        child: VsButton(
+                          label: 'Log In',
+                          onPressed: _handleLogin,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                      ).animate().fadeIn().slideY(begin: 0.1),
+                    ],
+
                     const SizedBox(height: 24),
 
                     // Divider
@@ -281,7 +444,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Divider(
                                 color: cs.outlineVariant, height: 1)),
                       ],
-                    ).animate().fadeIn(delay: 1000.ms),
+                    ).animate().fadeIn(delay: 800.ms),
                     const SizedBox(height: 24),
 
                     // Sign up link
@@ -297,7 +460,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           side: BorderSide(color: cs.outlineVariant),
                         ),
                         child: Text(
-                          'Create Account',
+                          'Create New Account',
                           style: GoogleFonts.manrope(
                             fontWeight: FontWeight.w700,
                             fontSize: 16,
@@ -305,7 +468,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                    ).animate().fadeIn(delay: 1100.ms),
+                    ).animate().fadeIn(delay: 900.ms),
                     const SizedBox(height: 24),
 
                     // Terms
@@ -335,7 +498,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       textAlign: TextAlign.center,
-                    ).animate().fadeIn(delay: 1200.ms),
+                    ).animate().fadeIn(delay: 1000.ms),
                   ],
                 ),
               ),

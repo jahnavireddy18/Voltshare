@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vnest_app/core/config/auth_mode_config.dart';
 import 'package:vnest_app/core/enums/app_enums.dart';
 import 'package:vnest_app/core/providers/auth_provider.dart';
 import 'package:vnest_app/core/services/auth_service.dart';
+import 'package:vnest_app/core/services/demo_auth_service.dart';
 import 'package:vnest_app/core/theme/app_theme.dart';
 import 'package:vnest_app/widgets/common/vs_text_field.dart';
 import 'package:vnest_app/widgets/common/vs_button.dart';
@@ -40,6 +42,33 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _handleSignup() async {
+    final name = _nameController.text.trim();
+    final phone = DemoAuthService.normalizePhone(_phoneController.text);
+
+    if (AuthModeConfig.isDemoMode) {
+      if (name.isEmpty) {
+        setState(() => _errorMessage = 'Please enter your full name.');
+        return;
+      }
+      if (phone.isEmpty) {
+        setState(() => _errorMessage = 'Please enter your phone number.');
+        return;
+      }
+      if (!DemoAuthService.isValidPhone(phone)) {
+        setState(() => _errorMessage =
+            'Please enter a valid phone number (7-15 digits).');
+        return;
+      }
+
+      setState(() => _errorMessage = null);
+      context.push('/otp-verification', extra: {
+        'phoneNumber': phone,
+        'name': name,
+        'role': _selectedRole,
+      });
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -49,10 +78,10 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       await AuthProvider().signUp(
-        name: _nameController.text.trim(),
+        name: name,
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        phone: _phoneController.text.trim(),
+        phone: phone,
         role: _selectedRole,
       );
 

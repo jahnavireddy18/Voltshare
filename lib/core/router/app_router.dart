@@ -9,6 +9,10 @@ import 'package:vnest_app/screens/onboarding/onboarding_screen.dart';
 import 'package:vnest_app/screens/auth/login_screen.dart';
 import 'package:vnest_app/screens/auth/signup_screen.dart';
 import 'package:vnest_app/screens/auth/forgot_password_screen.dart';
+import 'package:vnest_app/screens/auth/otp_verification_screen.dart';
+import 'package:vnest_app/screens/auth/otp_success_screen.dart';
+import 'package:vnest_app/screens/auth/role_selection_screen.dart';
+import 'package:vnest_app/core/enums/app_enums.dart';
 import 'package:vnest_app/screens/home/charger_map_screen.dart';
 import 'package:vnest_app/screens/home/charger_details_screen.dart';
 import 'package:vnest_app/screens/booking/book_confirm_screen.dart';
@@ -95,6 +99,68 @@ class AppRouter {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           child: const ForgotPasswordScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(1.0, 0.0);
+            const end = Offset.zero;
+            final tween = Tween(begin: begin, end: end)
+                .chain(CurveTween(curve: Curves.easeInOutCubic));
+            return SlideTransition(
+                position: animation.drive(tween), child: child);
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/otp-verification',
+        name: 'otp-verification',
+        pageBuilder: (context, state) {
+          final extra = state.extra;
+          String phone = '';
+          String? name;
+          UserRole? role;
+          if (extra is Map<String, dynamic>) {
+            phone = extra['phoneNumber'] as String? ?? '';
+            name = extra['name'] as String?;
+            role = extra['role'] as UserRole?;
+          } else if (extra is String) {
+            phone = extra;
+          } else {
+            phone = state.uri.queryParameters['phone'] ?? '';
+          }
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: OtpVerificationScreen(
+              phoneNumber: phone,
+              name: name,
+              role: role,
+            ),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(1.0, 0.0);
+              const end = Offset.zero;
+              final tween = Tween(begin: begin, end: end)
+                  .chain(CurveTween(curve: Curves.easeInOutCubic));
+              return SlideTransition(
+                  position: animation.drive(tween), child: child);
+            },
+          );
+        },
+      ),
+      GoRoute(
+        path: '/otp-success',
+        name: 'otp-success',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const OtpSuccessScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/role-selection',
+        name: 'role-selection',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const RoleSelectionScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(1.0, 0.0);
             const end = Offset.zero;

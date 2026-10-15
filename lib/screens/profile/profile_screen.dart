@@ -190,24 +190,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(AuthProvider().currentUser?.name ?? 'Guest User', style: GoogleFonts.sora(
-              fontSize: 28, fontWeight: FontWeight.w800,
+              fontSize: 26, fontWeight: FontWeight.w800,
               color: cs.onSurface, letterSpacing: -0.5,
             )),
             const SizedBox(width: 8),
             const Icon(Icons.verified, color: AppColors.primary, size: 20),
           ],
         ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(100),
+        if (AuthProvider().currentUser?.phone.isNotEmpty == true) ...[
+          const SizedBox(height: 4),
+          Text(
+            AuthProvider().currentUser!.phone,
+            style: GoogleFonts.manrope(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurfaceVariant,
+            ),
           ),
-          child: Text('DRIVER · HOST', style: GoogleFonts.plusJakartaSans(
-            fontSize: 10, fontWeight: FontWeight.w700,
-            color: cs.onSurfaceVariant, letterSpacing: 2,
-          )),
+        ],
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Text(
+                AuthProvider().currentUser?.role.name.toUpperCase() ?? 'DRIVER',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 10, fontWeight: FontWeight.w700,
+                  color: cs.onSurfaceVariant, letterSpacing: 2,
+                ),
+              ),
+            ),
+            if (AuthProvider().isDemoMode ||
+                AuthProvider().currentUser?.id.startsWith('demo_') == true) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.flash_on, size: 12, color: AppColors.primary),
+                    const SizedBox(width: 4),
+                    Text(
+                      'DEMO',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
       ],
     ).animate().fadeIn().slideY(begin: -0.1);
@@ -471,7 +518,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       children: [
         TextButton(
-          onPressed: () => context.go('/login'),
+          onPressed: () async {
+            await AuthProvider().signOut();
+            if (context.mounted) {
+              context.go('/login');
+            }
+          },
           child: Text('Sign out', style: GoogleFonts.manrope(
             color: cs.onSurfaceVariant, fontWeight: FontWeight.w500,
           )),
