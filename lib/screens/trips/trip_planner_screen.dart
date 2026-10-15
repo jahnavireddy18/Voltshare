@@ -1476,12 +1476,13 @@ class _TripMapPainter extends CustomPainter {
         end,
       ];
 
+      final stationPaint = Paint()..color = AppColors.primary;
       for (int i = 0; i < stops.length; i++) {
         final stop = stops[i];
         final isEnd = i == stops.length - 1;
         final isStation = i == 1 || i == 2;
 
-        canvas.drawCircle(stop, isEnd ? 10 : 8, isStation ? Paint()..color = AppColors.primary : stopPaint);
+        canvas.drawCircle(stop, isEnd ? 10 : 8, isStation ? stationPaint : stopPaint);
         canvas.drawCircle(stop, isEnd ? 10 : 8, borderPaint);
       }
 
