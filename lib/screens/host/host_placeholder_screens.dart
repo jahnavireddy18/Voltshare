@@ -254,20 +254,166 @@ class _HostEarningsScreenState extends State<HostEarningsScreen> {
                     )
                   else
                     ..._recentCompletedBookings.take(10).map((b) {
-                      final amount = (b.finalCost ?? b.pricingSnapshot.estimatedCost) * 0.9;
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: cs.primaryContainer,
-                          child: Icon(Icons.attach_money, color: cs.onPrimaryContainer),
+                      final gross = b.finalCost ?? b.pricingSnapshot.estimatedCost;
+                      final netAmount = gross * 0.9;
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: cs.primaryContainer,
+                            child: Icon(Icons.attach_money, color: cs.onPrimaryContainer),
+                          ),
+                          title: Text(currency.format(netAmount), style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+                          subtitle: Text('${b.chargerName} • ${DateFormat.yMMMd().format(b.startTime)}'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Settled', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.chevron_right, size: 18),
+                            ],
+                          ),
+                          onTap: () => _showStatementDialog(context, b, gross, netAmount),
                         ),
-                        title: Text(currency.format(amount), style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
-                        subtitle: Text(DateFormat.yMMMd().format(b.startTime)),
-                        trailing: Text('Completed', style: TextStyle(color: Colors.green)),
                       );
                     }),
                 ],
               ),
             ),
+    );
+  }
+
+  void _showStatementDialog(BuildContext context, BookingModel b, double gross, double netAmount) {
+    final cs = Theme.of(context).colorScheme;
+    final currency = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
+    final fee = gross * 0.1;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: cs.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.receipt_long, color: cs.onPrimaryContainer, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Host Payout Statement',
+                style: GoogleFonts.sora(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainer,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: cs.outlineVariant),
+                ),
+                child: Column(
+                  children: [
+                    _buildRow('Payout Ref', '#${b.id.substring(0, 8).toUpperCase()}', cs),
+                    const Divider(height: 16),
+                    _buildRow('Station', b.chargerName, cs),
+                    const Divider(height: 16),
+                    _buildRow('Date', DateFormat.yMMMd().add_jm().format(b.startTime), cs),
+                    const Divider(height: 16),
+                    _buildRow('Session Energy', '${b.pricingSnapshot.estimatedKwh} kWh', cs),
+                    const Divider(height: 16),
+                    _buildRow('Gross Revenue', currency.format(gross), cs),
+                    const Divider(height: 16),
+                    _buildRow('Platform Fee (10%)', '-${currency.format(fee)}', cs, isNegative: true),
+                    const Divider(height: 16),
+                    _buildRow('Net Payout Settled', currency.format(netAmount), cs, isHighlight: true),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Status: Settled to host wallet',
+                    style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: Text('Close', style: GoogleFonts.manrope(color: cs.onSurfaceVariant)),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.of(dialogCtx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Statement #${b.id.substring(0, 8).toUpperCase()} downloaded (Export ready).',
+                    style: GoogleFonts.manrope(),
+                  ),
+                  backgroundColor: AppColors.surfaceDark,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            icon: const Icon(Icons.download, size: 16),
+            label: const Text('Download Statement'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRow(String label, String value, ColorScheme cs, {bool isNegative = false, bool isHighlight = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.manrope(
+            fontSize: 12,
+            color: cs.onSurfaceVariant,
+            fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: isHighlight
+                ? AppColors.primary
+                : (isNegative ? cs.error : cs.onSurface),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -314,12 +460,30 @@ class HostSettingsScreen extends StatelessWidget {
             onTap: () => context.push('/privacy'),
           ),
           const SizedBox(height: 24),
-          _buildSectionHeader('Support', cs),
+          _buildSectionHeader('Support & Legal', cs),
           ListTile(
             leading: Icon(Icons.help_outline, color: cs.primary),
-            title: Text('Help Center', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+            title: Text('Help & Support Desk', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/help-support'),
+          ),
+          ListTile(
+            leading: Icon(Icons.chat_bubble_outline, color: cs.primary),
+            title: Text('Live Support Chat', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/live-chat'),
+          ),
+          ListTile(
+            leading: Icon(Icons.description_outlined, color: cs.primary),
+            title: Text('Terms of Service', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/terms-of-service'),
+          ),
+          ListTile(
+            leading: Icon(Icons.policy_outlined, color: cs.primary),
+            title: Text('Privacy Policy', style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/privacy-policy'),
           ),
           const SizedBox(height: 32),
           SizedBox(

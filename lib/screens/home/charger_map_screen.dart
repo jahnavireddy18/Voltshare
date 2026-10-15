@@ -366,17 +366,77 @@ class _ChargerMapScreenState extends State<ChargerMapScreen>
               ),
             ],
           ),
-          GestureDetector(
-            onTap: () => context.go('/profile'),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: cs.onSurface,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert, color: cs.onSurface),
+                tooltip: 'Help & Legal',
+                color: cs.surfaceContainer,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                onSelected: (value) {
+                  if (value == 'help') context.push('/help-support');
+                  if (value == 'terms') context.push('/terms-of-service');
+                  if (value == 'privacy') context.push('/privacy-policy');
+                  if (value == 'chat') context.push('/live-chat');
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'help',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.help_outline, size: 20),
+                        const SizedBox(width: 12),
+                        Text('Help & Support', style: GoogleFonts.manrope(fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'chat',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.chat_bubble_outline, size: 20),
+                        const SizedBox(width: 12),
+                        Text('Live Chat', style: GoogleFonts.manrope(fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'terms',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.description_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        Text('Terms of Service', style: GoogleFonts.manrope(fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'privacy',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.privacy_tip_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        Text('Privacy Policy', style: GoogleFonts.manrope(fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              child: Icon(Icons.person, color: cs.surface),
-            ),
+              const SizedBox(width: 4),
+              GestureDetector(
+                onTap: () => context.go('/profile'),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: cs.onSurface,
+                  ),
+                  child: Icon(Icons.person, color: cs.surface),
+                ),
+              ),
+            ],
           ),
         ],
       ),

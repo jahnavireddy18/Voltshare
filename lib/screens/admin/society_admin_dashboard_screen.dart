@@ -69,10 +69,12 @@ class _SocietyAdminDashboardScreenState extends State<SocietyAdminDashboardScree
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.canPop() ? context.pop() : context.go('/home'),
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
+        leading: context.canPop()
+            ? IconButton(
+                onPressed: () => context.pop(),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+              )
+            : null,
         title: Column(
           children: [
             Text('SOCIETY ADMIN', style: GoogleFonts.jetBrainsMono(
@@ -86,7 +88,7 @@ class _SocietyAdminDashboardScreenState extends State<SocietyAdminDashboardScree
         centerTitle: true,
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 8),
+            margin: const EdgeInsets.only(right: 4),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.secondary.withValues(alpha: 0.15),
@@ -96,6 +98,60 @@ class _SocietyAdminDashboardScreenState extends State<SocietyAdminDashboardScree
             child: Text('READ ONLY', style: GoogleFonts.jetBrainsMono(
               fontSize: 9, color: AppColors.secondary,
             )),
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            tooltip: 'Support & Legal',
+            color: AppColors.surfaceDark,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            onSelected: (value) {
+              if (value == 'help') context.push('/help-support');
+              if (value == 'chat') context.push('/live-chat');
+              if (value == 'terms') context.push('/terms-of-service');
+              if (value == 'privacy') context.push('/privacy-policy');
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'help',
+                child: Row(
+                  children: [
+                    const Icon(Icons.help_outline, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
+                    Text('Admin Help Desk', style: GoogleFonts.manrope(color: Colors.white, fontSize: 14)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'chat',
+                child: Row(
+                  children: [
+                    const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
+                    Text('Live Support Chat', style: GoogleFonts.manrope(color: Colors.white, fontSize: 14)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'terms',
+                child: Row(
+                  children: [
+                    const Icon(Icons.description_outlined, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
+                    Text('Terms of Service', style: GoogleFonts.manrope(color: Colors.white, fontSize: 14)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'privacy',
+                child: Row(
+                  children: [
+                    const Icon(Icons.privacy_tip_outlined, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
+                    Text('Privacy Policy', style: GoogleFonts.manrope(color: Colors.white, fontSize: 14)),
+                  ],
+                ),
+              ),
+            ],
           ),
           IconButton(
             key: const Key('admin_logout_button'),

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -485,16 +486,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             text: 'Terms of Service',
                             style: GoogleFonts.manrope(
                               decoration: TextDecoration.underline,
-                              color: cs.onSurfaceVariant,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
                             ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => context.push('/terms-of-service'),
                           ),
                           const TextSpan(text: ' • '),
                           TextSpan(
                             text: 'Privacy Policy',
                             style: GoogleFonts.manrope(
                               decoration: TextDecoration.underline,
-                              color: cs.onSurfaceVariant,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
                             ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => context.push('/privacy-policy'),
                           ),
                         ],
                       ),

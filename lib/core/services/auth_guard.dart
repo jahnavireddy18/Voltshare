@@ -15,16 +15,22 @@ class AuthGuard {
     final userRole = authProvider.userRole;
     final currentPath = state.uri.path;
 
-    final isAuthRoute = currentPath == '/login' ||
+    final isPublicRoute = currentPath == '/login' ||
         currentPath == '/signup' ||
         currentPath == '/forgot-password' ||
         currentPath == '/onboarding' ||
         currentPath == '/otp-verification' ||
         currentPath == '/otp-success' ||
-        currentPath == '/role-selection';
+        currentPath == '/role-selection' ||
+        currentPath == '/terms-of-service' ||
+        currentPath == '/terms' ||
+        currentPath == '/privacy-policy' ||
+        currentPath == '/privacy' ||
+        currentPath == '/help-support' ||
+        currentPath == '/live-chat';
 
     // If user is not logged in and trying to access a protected route
-    if (!isLoggedIn && !isAuthRoute) {
+    if (!isLoggedIn && !isPublicRoute) {
       return '/login';
     }
 

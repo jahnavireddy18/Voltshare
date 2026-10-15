@@ -43,6 +43,7 @@ import 'package:vnest_app/screens/host/host_chat_screen.dart';
 import 'package:vnest_app/screens/host/rate_session_screen.dart';
 import 'package:vnest_app/screens/host/host_placeholder_screens.dart';
 import 'package:vnest_app/screens/admin/society_admin_dashboard_screen.dart';
+import 'package:vnest_app/screens/support/live_chat_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -421,6 +422,41 @@ class AppRouter {
                 position: animation.drive(tween), child: child);
           },
         ),
+      ),
+      GoRoute(
+        path: '/terms',
+        name: 'terms',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const TermsOfServiceScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(1.0, 0.0);
+            const end = Offset.zero;
+            final tween = Tween(begin: begin, end: end)
+                .chain(CurveTween(curve: Curves.easeInOutCubic));
+            return SlideTransition(
+                position: animation.drive(tween), child: child);
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/live-chat',
+        name: 'live-chat',
+        pageBuilder: (context, state) {
+          final topic = state.uri.queryParameters['topic'];
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: LiveChatScreen(initialTopic: topic),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(1.0, 0.0);
+              const end = Offset.zero;
+              final tween = Tween(begin: begin, end: end)
+                  .chain(CurveTween(curve: Curves.easeInOutCubic));
+              return SlideTransition(
+                  position: animation.drive(tween), child: child);
+            },
+          );
+        },
       ),
       GoRoute(
         path: '/host-telemetry',

@@ -66,7 +66,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                         children: [
                           const TextSpan(text: 'How will you\n'),
                           TextSpan(
-                            text: 'VoltNest?',
+                            text: 'VoltShare?',
                             style: GoogleFonts.sora(
                               color: cs.primary,
                               fontSize: 32,

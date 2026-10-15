@@ -466,7 +466,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       {'icon': Icons.credit_card, 'label': 'Payment Methods', 'route': '/payment-methods'},
       {'icon': Icons.notifications, 'label': 'Notifications', 'route': '/notifications'},
       {'icon': Icons.help, 'label': 'Help & Support', 'route': '/help-support'},
-      {'icon': Icons.lock, 'label': 'Privacy', 'route': '/privacy'},
+      {'icon': Icons.lock, 'label': 'Privacy & Legal', 'route': '/privacy'},
+      {'icon': Icons.description_outlined, 'label': 'Terms of Service', 'route': '/terms-of-service'},
       {'icon': Icons.logout, 'label': 'Log Out', 'route': 'logout'},
     ];
 
@@ -554,7 +555,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           )),
         ),
         const SizedBox(height: 8),
-        Text('v0.9.2 · VOLTNEST', style: GoogleFonts.plusJakartaSans(
+        Text('v0.9.2 · VOLTSHARE', style: GoogleFonts.plusJakartaSans(
           fontSize: 11, fontWeight: FontWeight.w700,
           color: cs.onSurfaceVariant.withValues(alpha: 0.5), letterSpacing: 2,
         )),
