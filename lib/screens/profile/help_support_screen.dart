@@ -162,116 +162,138 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     showDialog(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+        builder: (dialogStateCtx, setDialogState) => Dialog(
           backgroundColor: cs.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(
-            'Report an Issue',
-            style: GoogleFonts.sora(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Issue Category',
-                  style: GoogleFonts.manrope(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurfaceVariant,
-                  ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Report an Issue',
+                          style: GoogleFonts.sora(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, color: cs.onSurfaceVariant, size: 20),
+                          onPressed: () => Navigator.of(dialogCtx).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Issue Category',
+                      style: GoogleFonts.manrope(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        filled: true,
+                        fillColor: cs.surfaceContainer,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: cs.outlineVariant),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: cs.outlineVariant),
+                        ),
+                      ),
+                      items: categories.map((cat) {
+                        return DropdownMenuItem(
+                          value: cat,
+                          child: Text(cat, style: GoogleFonts.manrope(fontSize: 13, color: cs.onSurface)),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => selectedCategory = val);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Description',
+                      style: GoogleFonts.manrope(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: textController,
+                      maxLines: 4,
+                      style: GoogleFonts.manrope(fontSize: 14, color: cs.onSurface),
+                      decoration: InputDecoration(
+                        hintText: 'Please describe the issue in detail...',
+                        hintStyle: GoogleFonts.manrope(fontSize: 13, color: cs.onSurfaceVariant),
+                        filled: true,
+                        fillColor: cs.surfaceContainer,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: cs.outlineVariant),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: cs.outlineVariant),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogCtx).pop(),
+                          child: Text('Cancel', style: GoogleFonts.manrope(color: cs.onSurfaceVariant)),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          onPressed: () {
+                            final text = textController.text.trim();
+                            final messenger = ScaffoldMessenger.of(context);
+                            Navigator.of(dialogCtx).pop();
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  text.isEmpty
+                                      ? 'Issue logged for review under $selectedCategory.'
+                                      : 'Issue ticket recorded under $selectedCategory. Support will review shortly.',
+                                  style: GoogleFonts.manrope(),
+                                ),
+                                backgroundColor: AppColors.surfaceDark,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.black,
+                          ),
+                          child: const Text('Submit Report'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: selectedCategory,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    filled: true,
-                    fillColor: cs.surfaceContainer,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: cs.outlineVariant),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: cs.outlineVariant),
-                    ),
-                  ),
-                  items: categories.map((cat) {
-                    return DropdownMenuItem(
-                      value: cat,
-                      child: Text(cat, style: GoogleFonts.manrope(fontSize: 13, color: cs.onSurface)),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setDialogState(() => selectedCategory = val);
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Description',
-                  style: GoogleFonts.manrope(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: textController,
-                  maxLines: 4,
-                  style: GoogleFonts.manrope(fontSize: 14, color: cs.onSurface),
-                  decoration: InputDecoration(
-                    hintText: 'Please describe the issue in detail...',
-                    hintStyle: GoogleFonts.manrope(fontSize: 13, color: cs.onSurfaceVariant),
-                    filled: true,
-                    fillColor: cs.surfaceContainer,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: cs.outlineVariant),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: cs.outlineVariant),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text('Cancel', style: GoogleFonts.manrope(color: cs.onSurfaceVariant)),
-            ),
-            FilledButton(
-              onPressed: () {
-                final text = textController.text.trim();
-                Navigator.of(dialogCtx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      text.isEmpty
-                          ? 'Issue logged for review under $selectedCategory.'
-                          : 'Issue ticket recorded under $selectedCategory. Support will review shortly.',
-                      style: GoogleFonts.manrope(),
-                    ),
-                    backgroundColor: AppColors.surfaceDark,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.black,
               ),
-              child: const Text('Submit Report'),
             ),
-          ],
+          ),
         ),
       ),
     );
