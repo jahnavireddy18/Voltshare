@@ -276,7 +276,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
                         'chargerId': booking.chargerId,
                         'bookingId': booking.id,
                         'chargerName': booking.chargerName,
-                        'sessionInfo': '${DateFormat('MMM d').format(booking.startTime)} · ${booking.estimatedKwh.toStringAsFixed(1)} kWh',
+                        'sessionInfo': '${DateFormat('MMM d').format(booking.startTime)} · ${booking.pricingSnapshot.estimatedKwh.toStringAsFixed(1)} kWh',
                       }),
                       icon: const Icon(Icons.star_rounded, size: 16, color: AppColors.primary),
                       label: Text(

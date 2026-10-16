@@ -35,6 +35,8 @@ class BookingModel {
     this.finalCost,
   });
 
+  double get estimatedKwh => pricingSnapshot.estimatedKwh;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'userId': userId,

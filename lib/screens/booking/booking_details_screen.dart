@@ -446,7 +446,7 @@ class BookingDetailsScreen extends StatelessWidget {
                   'chargerId': booking.chargerId,
                   'bookingId': booking.id,
                   'chargerName': booking.chargerName,
-                  'sessionInfo': '${DateFormat('MMM d, yyyy').format(booking.startTime)} · ${booking.estimatedKwh.toStringAsFixed(1)} kWh',
+                  'sessionInfo': '${DateFormat('MMM d, yyyy').format(booking.startTime)} · ${booking.pricingSnapshot.estimatedKwh.toStringAsFixed(1)} kWh',
                 }),
               ),
               const SizedBox(height: 12),
