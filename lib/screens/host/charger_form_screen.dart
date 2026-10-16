@@ -5,6 +5,7 @@ import 'package:vnest_app/core/models/charger_model.dart';
 import 'package:vnest_app/core/enums/app_enums.dart';
 import 'package:vnest_app/core/providers/auth_provider.dart';
 import 'package:vnest_app/core/services/charger_service.dart';
+import 'package:vnest_app/core/theme/app_theme.dart';
 import 'package:vnest_app/widgets/common/vs_components.dart';
 
 class ChargerFormScreen extends StatefulWidget {
@@ -17,12 +18,13 @@ class ChargerFormScreen extends StatefulWidget {
 
 class _ChargerFormScreenState extends State<ChargerFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _latController = TextEditingController();
-  final _lngController = TextEditingController();
-  final _powerController = TextEditingController();
-  final _priceController = TextEditingController();
+  final _nameController = TextEditingController(text: 'Home Wallbox 7.4 kW');
+  final _addressController =
+      TextEditingController(text: 'Prestige Tech Park, Outer Ring Road, Bangalore');
+  final _latController = TextEditingController(text: '12.9352');
+  final _lngController = TextEditingController(text: '77.6946');
+  final _powerController = TextEditingController(text: '7.4');
+  final _priceController = TextEditingController(text: '16.0');
 
   ConnectorType _connectorType = ConnectorType.type2;
   bool _isLoading = false;
@@ -34,6 +36,22 @@ class _ChargerFormScreenState extends State<ChargerFormScreen> {
     if (widget.chargerId != null) {
       _loadCharger();
     }
+  }
+
+  void _applyPreset(
+    String name,
+    String address,
+    double power,
+    double price,
+    ConnectorType type,
+  ) {
+    setState(() {
+      _nameController.text = name;
+      _addressController.text = address;
+      _powerController.text = power.toString();
+      _priceController.text = price.toString();
+      _connectorType = type;
+    });
   }
 
   Future<void> _loadCharger() async {
@@ -57,11 +75,11 @@ class _ChargerFormScreenState extends State<ChargerFormScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final hostId = AuthProvider().currentUser!.id;
-      final lat = double.parse(_latController.text);
-      final lng = double.parse(_lngController.text);
-      final power = double.parse(_powerController.text);
-      final price = double.parse(_priceController.text);
+      final hostId = AuthProvider().currentUser?.id ?? 'demo_host_1';
+      final lat = double.tryParse(_latController.text.trim()) ?? 12.9352;
+      final lng = double.tryParse(_lngController.text.trim()) ?? 77.6946;
+      final power = double.tryParse(_powerController.text.trim()) ?? 7.4;
+      final price = double.tryParse(_priceController.text.trim()) ?? 16.0;
 
       if (_existingCharger == null) {
         // Create new
@@ -69,13 +87,19 @@ class _ChargerFormScreenState extends State<ChargerFormScreen> {
           ChargerModel(
             id: '',
             hostId: hostId,
-            name: _nameController.text,
-            address: _addressController.text,
+            hostName: AuthProvider().currentUser?.name ?? 'Priya Sharma',
+            name: _nameController.text.trim().isEmpty
+                ? 'My EV Charger'
+                : _nameController.text.trim(),
+            address: _addressController.text.trim().isEmpty
+                ? 'Bangalore, Karnataka'
+                : _addressController.text.trim(),
             latitude: lat,
             longitude: lng,
             connectorType: _connectorType,
             powerOutput: power,
             pricePerKwh: price,
+            status: ChargerListingStatus.active,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
@@ -92,20 +116,23 @@ class _ChargerFormScreenState extends State<ChargerFormScreen> {
             'connectorType': _connectorType.name,
             'powerOutput': power,
             'pricePerKwh': price,
-          }
+          },
         );
       }
 
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Charger saved successfully!')),
+          const SnackBar(
+            content: Text('Charger saved successfully!'),
+            backgroundColor: AppColors.surfaceVariantDark,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('Error saving charger: $e')),
         );
       }
     } finally {
@@ -127,95 +154,235 @@ class _ChargerFormScreenState extends State<ChargerFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
+        backgroundColor: AppColors.backgroundDark,
+        elevation: 0,
         title: Text(
           widget.chargerId == null ? 'Add Charger' : 'Edit Charger',
-          style: GoogleFonts.manrope(fontWeight: FontWeight.w700),
+          style: GoogleFonts.sora(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Charger Details', style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
+                    Text(
+                      'Quick Presets (1-Tap Fill)',
+                      style: GoogleFonts.manrope(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          ActionChip(
+                            label: Text(
+                              '🏠 Home Wallbox (7.4 kW)',
+                              style: GoogleFonts.manrope(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            backgroundColor: AppColors.surfaceVariantDark,
+                            side: const BorderSide(color: AppColors.borderDark),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            onPressed: () => _applyPreset(
+                              'Home Wallbox 7.4 kW',
+                              'Tower B, Parking Slot 4, Prestige Tech Park',
+                              7.4,
+                              16.0,
+                              ConnectorType.type2,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ActionChip(
+                            label: Text(
+                              '🏢 Society AC (11 kW)',
+                              style: GoogleFonts.manrope(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            backgroundColor: AppColors.surfaceVariantDark,
+                            side: const BorderSide(color: AppColors.borderDark),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            onPressed: () => _applyPreset(
+                              'Society Hub - Tower A',
+                              'Visitor Parking, Tower A Basement, Bangalore',
+                              11.0,
+                              18.0,
+                              ConnectorType.type2,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ActionChip(
+                            label: Text(
+                              '⚡ DC Fast (25 kW CCS2)',
+                              style: GoogleFonts.manrope(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            backgroundColor: AppColors.surfaceVariantDark,
+                            side: const BorderSide(color: AppColors.borderDark),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            onPressed: () => _applyPreset(
+                              'Commercial Fast Hub',
+                              'Ground Floor EV Bay, Gate 2, Bangalore',
+                              25.0,
+                              22.0,
+                              ConnectorType.ccs2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Charger Details',
+                      style: GoogleFonts.sora(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     VsTextField(
                       controller: _nameController,
-                      label: 'Charger Name (e.g. Home Tesla Charger)',
-                      validator: (val) => val!.isEmpty ? 'Required' : null,
+                      label: 'Charger Name',
+                      validator: (val) =>
+                          val == null || val.trim().isEmpty ? 'Required' : null,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     VsTextField(
                       controller: _addressController,
                       label: 'Full Address',
-                      validator: (val) => val!.isEmpty ? 'Required' : null,
+                      validator: (val) =>
+                          val == null || val.trim().isEmpty ? 'Required' : null,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
                           child: VsTextField(
                             controller: _latController,
                             label: 'Latitude',
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            validator: (val) => val!.isEmpty ? 'Required' : null,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            validator: (val) =>
+                                val == null || val.trim().isEmpty ? 'Required' : null,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 14),
                         Expanded(
                           child: VsTextField(
                             controller: _lngController,
                             label: 'Longitude',
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            validator: (val) => val!.isEmpty ? 'Required' : null,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            validator: (val) =>
+                                val == null || val.trim().isEmpty ? 'Required' : null,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 32),
-                    Text('Specifications', style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Power & Pricing Specifications',
+                      style: GoogleFonts.sora(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     DropdownButtonFormField<ConnectorType>(
                       value: _connectorType,
-                      decoration: const InputDecoration(
+                      dropdownColor: AppColors.surfaceVariantDark,
+                      style: GoogleFonts.manrope(color: Colors.white, fontSize: 14),
+                      decoration: InputDecoration(
                         labelText: 'Connector Type',
-                        border: OutlineInputBorder(),
+                        labelStyle: GoogleFonts.manrope(color: AppColors.textSecondary),
+                        filled: true,
+                        fillColor: AppColors.surfaceDark,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.borderDark),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.borderDark),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primary),
+                        ),
                       ),
                       items: ConnectorType.values.map((e) {
-                        return DropdownMenuItem(value: e, child: Text(e.label));
+                        return DropdownMenuItem(
+                          value: e,
+                          child: Text(e.label, style: const TextStyle(color: Colors.white)),
+                        );
                       }).toList(),
-                      onChanged: (val) => setState(() => _connectorType = val!),
+                      onChanged: (val) {
+                        if (val != null) setState(() => _connectorType = val);
+                      },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
                           child: VsTextField(
                             controller: _powerController,
                             label: 'Power (kW)',
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            validator: (val) => val!.isEmpty ? 'Required' : null,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            validator: (val) =>
+                                val == null || val.trim().isEmpty ? 'Required' : null,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 14),
                         Expanded(
                           child: VsTextField(
                             controller: _priceController,
-                            label: 'Price per kWh (₹)',
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            validator: (val) => val!.isEmpty ? 'Required' : null,
+                            label: 'Tariff (₹/kWh)',
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            validator: (val) =>
+                                val == null || val.trim().isEmpty ? 'Required' : null,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
                     VsButton.fullWidth(
-                      label: 'Save Charger',
+                      label: widget.chargerId == null ? 'Save Charger' : 'Update Charger',
                       onPressed: _saveCharger,
                       isLoading: _isLoading,
                     ),

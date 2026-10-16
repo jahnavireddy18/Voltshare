@@ -38,11 +38,13 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
   Future<void> _loadDashboardData() async {
     setState(() => _isLoading = true);
     try {
-      final hostId = AuthProvider().currentUser?.id;
-      if (hostId == null) return;
+      final hostId = AuthProvider().currentUser?.id ?? 'demo_host_1';
 
       final chargers = await _chargerService.getChargersByHost(hostId);
-      final allBookings = await _bookingService.getBookingsByHost(hostId);
+      List<BookingModel> allBookings = [];
+      try {
+        allBookings = await _bookingService.getBookingsByHost(hostId).timeout(const Duration(seconds: 2));
+      } catch (_) {}
 
       final now = DateTime.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
@@ -80,11 +82,11 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
           _liveSessions = liveSessions;
           _todayEarnings = earnings;
           _todayKwh = kwh;
-          _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint('Error loading host dashboard: $e');
+    } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -160,8 +162,14 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
           ),
           const SizedBox(height: 8),
           FilledButton(
-            onPressed: () => context.push('/host/charger-form'),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () async {
+              await context.push('/host/charger-form');
+              _loadDashboardData();
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.black,
+            ),
             child: const Text('Add Charger'),
           )
         ],

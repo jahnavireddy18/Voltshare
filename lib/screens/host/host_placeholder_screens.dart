@@ -31,41 +31,64 @@ class _HostChargersScreenState extends State<HostChargersScreen> {
 
   Future<void> _loadChargers() async {
     setState(() => _isLoading = true);
-    final hostId = AuthProvider().currentUser?.id;
-    if (hostId != null) {
-      final chargers = await _chargerService.getChargersByHost(hostId);
+    try {
+      final hostId = AuthProvider().currentUser?.id ?? 'demo_host_1';
+      final chargers = await _chargerService.getChargersByHost(hostId).timeout(const Duration(seconds: 2));
       if (mounted) setState(() => _chargers = chargers);
+    } catch (e) {
+      debugPrint('Error loading chargers: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Scaffold(
+      backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
-        title: Text('My Chargers', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.backgroundDark,
+        elevation: 0,
+        title: Text(
+          'My Chargers',
+          style: GoogleFonts.sora(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.black,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         onPressed: () async {
           await context.push('/host/charger-form');
           _loadChargers();
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, size: 28),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : _chargers.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.ev_station, size: 64, color: cs.primary.withOpacity(0.5)),
+                      Icon(Icons.ev_station, size: 64, color: AppColors.primary.withValues(alpha: 0.5)),
                       const SizedBox(height: 16),
-                      Text('No chargers yet', style: GoogleFonts.manrope(fontSize: 18)),
+                      Text(
+                        'No chargers yet',
+                        style: GoogleFonts.sora(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      Text('Tap + to add your first charger', style: GoogleFonts.manrope(color: cs.onSurfaceVariant)),
+                      Text(
+                        'Tap + to add your first charger',
+                        style: GoogleFonts.manrope(color: AppColors.textSecondary),
+                      ),
                     ],
                   ),
                 )
@@ -74,32 +97,134 @@ class _HostChargersScreenState extends State<HostChargersScreen> {
                   itemCount: _chargers.length,
                   itemBuilder: (context, index) {
                     final charger = _chargers[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: ListTile(
-                        leading: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: cs.primaryContainer,
-                            borderRadius: BorderRadius.circular(8),
+                    final isOnline = charger.status == ChargerListingStatus.active;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceDark,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isOnline ? AppColors.primary.withValues(alpha: 0.6) : AppColors.borderDark,
+                          width: isOnline ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryContainer.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.ev_station, color: AppColors.primary, size: 24),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      charger.name,
+                                      style: GoogleFonts.sora(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      charger.address,
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.white, size: 20),
+                                onPressed: () async {
+                                  await context.push('/host/charger-form', extra: charger.id);
+                                  _loadChargers();
+                                },
+                              ),
+                            ],
                           ),
-                          child: Icon(Icons.ev_station, color: cs.onPrimaryContainer),
-                        ),
-                        title: Text(charger.name, style: GoogleFonts.manrope(fontWeight: FontWeight.bold)),
-                        subtitle: Text(charger.address, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () async {
-                                await context.push('/host/charger-form', extra: charger.id);
-                                _loadChargers();
-                              },
-                            ),
-                          ],
-                        ),
+                          const SizedBox(height: 12),
+                          const Divider(color: AppColors.borderDark, height: 1),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceVariantDark,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: AppColors.borderDark),
+                                    ),
+                                    child: Text(
+                                      '${charger.powerOutput} kW · ${charger.connectorType.label}',
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '₹${charger.pricePerKwh.toStringAsFixed(1)}/kWh',
+                                    style: GoogleFonts.sora(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: (isOnline ? AppColors.primary : AppColors.error).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isOnline ? AppColors.primary : AppColors.error,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 4,
+                                      backgroundColor: isOnline ? AppColors.primary : AppColors.error,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      isOnline ? 'Online' : 'Offline',
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: isOnline ? AppColors.primary : AppColors.error,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     );
                   },
