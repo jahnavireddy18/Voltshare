@@ -248,10 +248,10 @@ class _HostChatScreenState extends State<HostChatScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.accentGreen.withValues(alpha: 0.15),
+                      color: AppColors.primaryContainer.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.camera_alt, color: AppColors.accentGreen),
+                    child: const Icon(Icons.camera_alt, color: AppColors.primaryContainer),
                   ),
                   title: Text(
                     'Send Charger Screen Photo',
@@ -389,7 +389,7 @@ class _HostChatScreenState extends State<HostChatScreen> {
                     width: 14,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: _isHostTyping ? AppColors.accentGreen : AppColors.primary,
+                      color: _isHostTyping ? AppColors.primaryContainer : AppColors.primary,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: AppColors.backgroundDark,
@@ -419,7 +419,7 @@ class _HostChatScreenState extends State<HostChatScreen> {
                     style: GoogleFonts.manrope(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: _isHostTyping ? AppColors.accentGreen : AppColors.primary,
+                      color: _isHostTyping ? AppColors.primaryContainer : AppColors.primary,
                     ),
                   ),
                 ],
