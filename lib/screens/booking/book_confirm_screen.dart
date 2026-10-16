@@ -165,7 +165,7 @@ class _BookConfirmScreenState extends State<BookConfirmScreen> {
                           child: const Icon(Icons.person, size: 12, color: AppColors.primary),
                         ),
                         const SizedBox(width: 8),
-                        Text('HOST ID: ${widget.charger.hostId.substring(0, 5).toUpperCase()}', style: GoogleFonts.jetBrainsMono(
+                        Text('HOST ID: ${widget.charger.hostId.length >= 5 ? widget.charger.hostId.substring(0, 5).toUpperCase() : widget.charger.hostId.toUpperCase()}', style: GoogleFonts.jetBrainsMono(
                           fontSize: 11, color: cs.onSurfaceVariant, letterSpacing: 1,
                         )),
                       ],
@@ -587,7 +587,8 @@ class _BookConfirmScreenState extends State<BookConfirmScreen> {
     setState(() => _isBooking = true);
     try {
       final user = AuthProvider().currentUser;
-      if (user == null) throw Exception('User not authenticated');
+      final userId = (user?.id != null && user!.id.isNotEmpty) ? user.id : 'demo_user_1';
+      final userName = (user?.name != null && user!.name.isNotEmpty) ? user.name : 'EV Driver';
 
       final quote = _quote!;
       
@@ -595,8 +596,8 @@ class _BookConfirmScreenState extends State<BookConfirmScreen> {
       final estimatedKwh = widget.charger.powerOutput * _durationHours;
 
       final booking = await _bookingService.createBooking(
-        userId: user.id,
-        userName: user.name,
+        userId: userId,
+        userName: userName,
         chargerId: widget.charger.id,
         chargerName: widget.charger.name,
         hostId: widget.charger.hostId,

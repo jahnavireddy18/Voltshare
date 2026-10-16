@@ -369,18 +369,35 @@ class _ChargerMapScreenState extends State<ChargerMapScreen>
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              IconButton(
+                icon: const Icon(Icons.history, size: 22),
+                tooltip: 'My Bookings',
+                color: cs.onSurface,
+                onPressed: () => context.push('/booking-history'),
+              ),
               PopupMenuButton<String>(
                 icon: Icon(Icons.more_vert, color: cs.onSurface),
                 tooltip: 'Help & Legal',
                 color: cs.surfaceContainer,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 onSelected: (value) {
+                  if (value == 'bookings') context.push('/booking-history');
                   if (value == 'help') context.push('/help-support');
                   if (value == 'terms') context.push('/terms-of-service');
                   if (value == 'privacy') context.push('/privacy-policy');
                   if (value == 'chat') context.push('/live-chat');
                 },
                 itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'bookings',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.history, size: 20),
+                        const SizedBox(width: 12),
+                        Text('My Bookings', style: GoogleFonts.manrope(fontSize: 14)),
+                      ],
+                    ),
+                  ),
                   PopupMenuItem(
                     value: 'help',
                     child: Row(
@@ -789,25 +806,48 @@ class _ChargerMapScreenState extends State<ChargerMapScreen>
                     ),
                   ],
                 ),
-                FilledButton.icon(
-                  onPressed: () => context.push('/charger-details', extra: charger.id),
-                  icon: const Icon(Icons.bolt, size: 20),
-                  label: Text(
-                    'Start Nav',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => context.push('/charger-details', extra: charger.id),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: cs.onSurface,
+                        side: BorderSide(color: cs.outlineVariant),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Details',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
+                      onPressed: () => context.push('/book-confirm', extra: charger),
+                      icon: const Icon(Icons.bolt, size: 16),
+                      label: Text(
+                        'Book Slot',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),

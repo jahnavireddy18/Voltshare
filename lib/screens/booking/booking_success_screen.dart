@@ -441,19 +441,43 @@ class BookingSuccessScreen extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: double.infinity, height: 56,
-            child: FilledButton(
-              onPressed: () => context.push('/booking-details', extra: booking),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 54,
+                  child: FilledButton(
+                    onPressed: () => context.push('/booking-details', extra: booking),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text('View Details', style: GoogleFonts.sora(
+                      fontSize: 14, fontWeight: FontWeight.w700,
+                    )),
+                  ),
+                ),
               ),
-              child: Text('View Booking', style: GoogleFonts.sora(
-                fontSize: 15, fontWeight: FontWeight.w700,
-              )),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 54,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.go('/booking-history'),
+                    icon: const Icon(Icons.history, size: 18),
+                    label: Text('Booking History', style: GoogleFonts.sora(
+                      fontSize: 13, fontWeight: FontWeight.w700,
+                    )),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: cs.onSurface,
+                      side: BorderSide(color: AppColors.primary.withValues(alpha: 0.6)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Row(

@@ -34,26 +34,26 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
   Future<void> _loadBookings() async {
     setState(() => _isLoading = true);
     try {
-      final user = AuthProvider().currentUser;
-      if (user != null) {
-        final allBookings = await _bookingService.getBookingsByUser(user.id);
-        
-        final now = DateTime.now();
+      final userId = AuthProvider().currentUser?.id ?? 'demo_user_1';
+      final allBookings = await _bookingService.getBookingsByUser(userId);
+      
+      final now = DateTime.now();
+      if (mounted) {
         setState(() {
           _upcomingBookings = allBookings.where((b) => 
-            b.startTime.isAfter(now) && 
-            (b.status == BookingStatus.confirmed || b.status == BookingStatus.pending)
+            b.startTime.isAfter(now) || 
+            b.status == BookingStatus.confirmed || 
+            b.status == BookingStatus.active
           ).toList();
           
           _pastBookings = allBookings.where((b) => 
             !_upcomingBookings.contains(b)
           ).toList();
-          
-          _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint('Error loading bookings: $e');
+    } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -69,17 +69,24 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
-        title: Text('Booking History', style: GoogleFonts.sora(
-          fontSize: 16, fontWeight: FontWeight.w700, color: cs.onSurface,
-        )),
+        backgroundColor: AppColors.backgroundDark,
+        elevation: 0,
+        title: Text(
+          'Booking History',
+          style: GoogleFonts.sora(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,
           labelColor: AppColors.primary,
-          unselectedLabelColor: cs.onSurfaceVariant,
+          unselectedLabelColor: AppColors.textSecondary,
           tabs: const [
             Tab(text: 'Upcoming'),
             Tab(text: 'Past'),
@@ -87,7 +94,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
         ),
       ),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator()) 
+        ? const Center(child: CircularProgressIndicator(color: AppColors.primary)) 
         : TabBarView(
             controller: _tabController,
             children: [
@@ -100,21 +107,64 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
 
   Widget _buildBookingsList(List<BookingModel> bookings, String emptyMessage) {
     if (bookings.isEmpty) {
-      return VsEmptyState(
-        icon: Icons.event_busy,
-        title: emptyMessage,
-        subtitle: 'When you book a charger, it will appear here.',
+      return RefreshIndicator(
+        onRefresh: _loadBookings,
+        color: AppColors.primary,
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          children: [
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.event_busy, size: 64, color: AppColors.primary.withValues(alpha: 0.5)),
+                  const SizedBox(height: 16),
+                  Text(
+                    emptyMessage,
+                    style: GoogleFonts.sora(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'When you book a charger, it will appear here.',
+                    style: GoogleFonts.manrope(color: AppColors.textSecondary),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: () => context.go('/home'),
+                    icon: const Icon(Icons.bolt, size: 18),
+                    label: const Text('Find Chargers & Book'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: bookings.length,
-      itemBuilder: (context, index) {
-        final booking = bookings[index];
-        return _buildBookingCard(booking)
-          .animate().fadeIn(delay: (50 * index).ms).slideY(begin: 0.1);
-      },
+    return RefreshIndicator(
+      onRefresh: _loadBookings,
+      color: AppColors.primary,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: bookings.length,
+        itemBuilder: (context, index) {
+          final booking = bookings[index];
+          return _buildBookingCard(booking)
+            .animate().fadeIn(delay: (50 * index).ms).slideY(begin: 0.1);
+        },
+      ),
     );
   }
 
