@@ -19,6 +19,7 @@ class SessionSummaryScreen extends StatefulWidget {
 class _SessionSummaryScreenState extends State<SessionSummaryScreen> {
   BookingModel? _booking;
   bool _isLoading = true;
+  int _rating = 0;
 
   @override
   void initState() {
@@ -156,10 +157,28 @@ class _SessionSummaryScreenState extends State<SessionSummaryScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(5, (index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Icon(Icons.star_border,
-                              color: AppColors.outlineVariant, size: 40),
+                        final star = index + 1;
+                        final isFilled = star <= _rating;
+                        return GestureDetector(
+                          onTap: () async {
+                            setState(() => _rating = star);
+                            await context.push('/rate-host', extra: {
+                              'isHostRatingRenter': false,
+                              'chargerId': widget.session.chargerId,
+                              'bookingId': widget.session.bookingId,
+                              'chargerName': _booking?.chargerName ?? 'EV Charging Station',
+                              'initialRating': star,
+                              'sessionInfo': '${energy.toStringAsFixed(2)} kWh · ${widget.session.durationLabel}',
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Icon(
+                              isFilled ? Icons.star : Icons.star_border,
+                              color: isFilled ? AppColors.primary : AppColors.outlineVariant,
+                              size: 40,
+                            ),
+                          ),
                         );
                       }),
                     ).animate().fadeIn(delay: 700.ms),

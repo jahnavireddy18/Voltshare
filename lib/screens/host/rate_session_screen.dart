@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vnest_app/core/providers/auth_provider.dart';
+import 'package:vnest_app/core/services/review_service.dart';
 import 'package:vnest_app/core/theme/app_theme.dart';
 
 class RateSessionScreen extends StatefulWidget {
-  const RateSessionScreen({super.key});
+  final Map<String, dynamic>? extra;
+  const RateSessionScreen({super.key, this.extra});
 
   @override
   State<RateSessionScreen> createState() => _RateSessionScreenState();
@@ -13,24 +16,58 @@ class RateSessionScreen extends StatefulWidget {
 
 class _RateSessionScreenState extends State<RateSessionScreen> {
   int _rating = 5;
-  final Set<String> _selectedTags = {'Fast charging', 'Easy access'};
+  final Set<String> _selectedTags = {};
   final TextEditingController _reviewController = TextEditingController();
+  bool _isSubmitting = false;
 
-  static const _ratingLabels = {
+  bool get _isHostRatingRenter => widget.extra?['isHostRatingRenter'] == true;
+
+  static const _hostRatingLabels = {
+    1: 'Difficult renter',
+    2: 'Below average',
+    3: 'Satisfactory',
+    4: 'Good driver',
+    5: 'Excellent renter! 🌟',
+  };
+
+  static const _driverRatingLabels = {
     1: 'Terrible',
     2: 'Poor',
     3: 'Average',
     4: 'Good',
-    5: 'Excellent!',
+    5: 'Excellent Host! ⚡',
   };
 
-  static const _tags = [
-    'Fast charging',
-    'Clean spot',
-    'Easy access',
-    'Great host',
-    'Accurate listing',
+  static const _renterTags = [
+    'Punctual driver',
+    'Clean parking bay',
+    'Careful with cable',
+    'Polite communication',
+    'Left bay on time',
+    'Followed society rules',
   ];
+
+  static const _hostTags = [
+    'Great host',
+    'Fast charging',
+    'Easy access',
+    'Clean spot',
+    'Accurate listing',
+    'Clear directions',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.extra?['initialRating'] is int) {
+      _rating = (widget.extra!['initialRating'] as int).clamp(1, 5);
+    }
+    if (_isHostRatingRenter) {
+      _selectedTags.addAll(['Punctual driver', 'Clean parking bay']);
+    } else {
+      _selectedTags.addAll(['Fast charging', 'Easy access']);
+    }
+  }
 
   @override
   void dispose() {
@@ -38,8 +75,102 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
     super.dispose();
   }
 
+  Future<void> _handleSubmit() async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
+
+    try {
+      final user = AuthProvider().currentUser;
+      final userId = (user?.id != null && user!.id.isNotEmpty) ? user.id : 'demo_user_1';
+      final userName = (user?.name != null && user!.name.isNotEmpty) ? user.name : 'VoltShare User';
+
+      if (_isHostRatingRenter) {
+        final renterId = widget.extra?['renterId'] ?? 'demo_renter_1';
+        final renterName = widget.extra?['renterName'] ?? 'Rahul Sharma';
+        await ReviewService().submitRenterReview(
+          hostId: userId,
+          renterId: renterId,
+          renterName: renterName,
+          rating: _rating,
+          tags: _selectedTags.toList(),
+          comment: _reviewController.text,
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Renter rating submitted for $renterName! ($_rating ★)',
+                    style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } else {
+        final chargerId = widget.extra?['chargerId'] ?? 'ch_1';
+        final bookingId = widget.extra?['bookingId'] ?? 'bk_demo_${DateTime.now().millisecondsSinceEpoch}';
+
+        await ReviewService().submitReview(
+          userId: userId,
+          userName: userName,
+          chargerId: chargerId,
+          bookingId: bookingId,
+          rating: _rating,
+          comment: _reviewController.text,
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Host & Charger review submitted! ($_rating ★)',
+                    style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted) context.pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final title = _isHostRatingRenter ? 'Rate Last Renter' : 'Rate Host & Charger';
+
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
@@ -50,7 +181,7 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
           icon: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
         ),
         title: Text(
-          'Rate your session',
+          title,
           style: GoogleFonts.sora(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -84,6 +215,14 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
   }
 
   Widget _buildSessionSummaryCard() {
+    final isRenter = _isHostRatingRenter;
+    final heading = isRenter
+        ? (widget.extra?['renterName'] ?? 'Rahul Sharma')
+        : (widget.extra?['chargerName'] ?? 'Tower B Slot 4 (Host: Amit K.)');
+    final subtitle = isRenter
+        ? (widget.extra?['vehicle'] ?? widget.extra?['sessionInfo'] ?? 'Tata Nexon EV · Slot B4 · Completed yesterday')
+        : (widget.extra?['sessionInfo'] ?? 'Completed yesterday · 7.2 kWh · ₹86.40');
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -100,33 +239,39 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
-              Icons.bolt,
+            child: Icon(
+              isRenter ? Icons.person : Icons.ev_station,
               color: AppColors.primary,
               size: 26,
             ),
           ),
           const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tower B Slot 4',
-                style: GoogleFonts.sora(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  heading,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.sora(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Yesterday · 7.2 kWh · ₹86.40',
-                style: GoogleFonts.manrope(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -134,9 +279,14 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
   }
 
   Widget _buildRatingQuestion() {
+    final question = _isHostRatingRenter
+        ? 'How was your experience with this renter?'
+        : 'How was your charging experience with this host?';
+
     return Center(
       child: Text(
-        'How was your charging experience?',
+        question,
+        textAlign: TextAlign.center,
         style: GoogleFonts.manrope(
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -147,6 +297,8 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
   }
 
   Widget _buildStarRating() {
+    final labels = _isHostRatingRenter ? _hostRatingLabels : _driverRatingLabels;
+
     return Column(
       children: [
         Center(
@@ -177,7 +329,7 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             child: Text(
-              _ratingLabels[_rating] ?? '',
+              labels[_rating] ?? '',
               key: ValueKey(_rating),
               style: GoogleFonts.manrope(
                 fontSize: 15,
@@ -192,11 +344,13 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
   }
 
   Widget _buildTagSection() {
+    final tagList = _isHostRatingRenter ? _renterTags : _hostTags;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'What did you like?',
+          _isHostRatingRenter ? 'Renter highlights' : 'What did you like most?',
           style: GoogleFonts.manrope(
             fontSize: 15,
             fontWeight: FontWeight.w600,
@@ -207,7 +361,7 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
         Wrap(
           spacing: 10,
           runSpacing: 10,
-          children: _tags.map((tag) {
+          children: tagList.map((tag) {
             final isSelected = _selectedTags.contains(tag);
             return GestureDetector(
               onTap: () {
@@ -254,11 +408,18 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
   }
 
   Widget _buildReviewInput() {
+    final inputTitle = _isHostRatingRenter
+        ? 'Renter feedback for community (optional)'
+        : 'Add a review (optional)';
+    final hint = _isHostRatingRenter
+        ? 'Help fellow hosts know how this renter respects charger bays...'
+        : 'Tell other drivers about your experience with this host and charger...';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Add a review (optional)',
+          inputTitle,
           style: GoogleFonts.manrope(
             fontSize: 15,
             fontWeight: FontWeight.w600,
@@ -280,7 +441,7 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
               color: Colors.white,
             ),
             decoration: InputDecoration(
-              hintText: 'Tell other renters about your experience...',
+              hintText: hint,
               hintStyle: GoogleFonts.manrope(
                 fontSize: 14,
                 color: AppColors.textMuted,
@@ -296,29 +457,13 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
   }
 
   Widget _buildSubmitButton() {
+    final label = _isHostRatingRenter ? 'Submit Renter Rating' : 'Submit Review';
+
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: () {
-          // Show success feedback
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Review submitted! Thank you.',
-                style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
-              ),
-              backgroundColor: AppColors.primary,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
-          Future.delayed(const Duration(milliseconds: 800), () {
-            if (mounted) context.pop();
-          });
-        },
+        onPressed: _isSubmitting ? null : _handleSubmit,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.black,
@@ -327,13 +472,19 @@ class _RateSessionScreenState extends State<RateSessionScreen> {
           ),
           elevation: 0,
         ),
-        child: Text(
-          'Submit Review',
-          style: GoogleFonts.manrope(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        child: _isSubmitting
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black),
+              )
+            : Text(
+                label,
+                style: GoogleFonts.manrope(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
       ),
     ).animate().fadeIn(duration: 400.ms, delay: 500.ms).slideY(begin: 0.06);
   }

@@ -263,6 +263,22 @@ class AppRouter {
         builder: (context, state) => BookingDetailsScreen(booking: state.extra as BookingModel),
       ),
       GoRoute(
+        path: '/rate-host',
+        name: 'rate-host',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: RateSessionScreen(extra: state.extra as Map<String, dynamic>?),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            final tween = Tween(begin: begin, end: end)
+                .chain(CurveTween(curve: Curves.easeInOutCubic));
+            return SlideTransition(
+                position: animation.drive(tween), child: child);
+          },
+        ),
+      ),
+      GoRoute(
         path: '/arrived',
         name: 'arrived',
         pageBuilder: (context, state) => CustomTransitionPage(
@@ -529,7 +545,7 @@ class AppRouter {
         name: 'host-rate-session',
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
-          child: const RateSessionScreen(),
+          child: RateSessionScreen(extra: state.extra as Map<String, dynamic>?),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(0.0, 1.0);
             const end = Offset.zero;

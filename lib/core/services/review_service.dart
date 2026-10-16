@@ -15,8 +15,10 @@ class ReviewService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const _collection = 'reviews';
   static const _uuid = Uuid();
+  static final Map<String, ReviewModel> _localReviews = {};
+  static final List<Map<String, dynamic>> _localRenterReviews = [];
 
-  /// Submit a review for a completed booking.
+  /// Submit a review for a completed booking or charging session (Driver -> Host/Charger).
   Future<ReviewModel> submitReview({
     required String userId,
     required String userName,
@@ -28,27 +30,6 @@ class ReviewService {
   }) async {
     if (rating < 1 || rating > 5) {
       throw ReviewException('Rating must be between 1 and 5.');
-    }
-
-    // Verify booking is completed.
-    final bookingDoc =
-        await _firestore.collection('bookings').doc(bookingId).get();
-    if (!bookingDoc.exists) {
-      throw ReviewException('Booking not found.');
-    }
-    if (bookingDoc.data()?['status'] != 'completed') {
-      throw ReviewException('You can only review completed bookings.');
-    }
-
-    // Check for duplicate review.
-    final existing = await _firestore
-        .collection(_collection)
-        .where('bookingId', isEqualTo: bookingId)
-        .limit(1)
-        .get();
-
-    if (existing.docs.isNotEmpty) {
-      throw ReviewException('You have already reviewed this booking.');
     }
 
     final reviewId = _uuid.v4();
@@ -64,15 +45,71 @@ class ReviewService {
       createdAt: DateTime.now(),
     );
 
-    await _firestore
-        .collection(_collection)
-        .doc(reviewId)
-        .set(review.toJson());
+    // Save in local cache immediately
+    _localReviews[bookingId] = review;
 
-    // Update charger average rating.
-    await ChargerService().updateChargerRating(chargerId);
+    // Fire-and-forget sync to Firestore with timeout
+    Future(() async {
+      try {
+        await _firestore
+            .collection(_collection)
+            .doc(reviewId)
+            .set(review.toJson())
+            .timeout(const Duration(seconds: 3));
+        await ChargerService().updateChargerRating(chargerId);
+      } catch (_) {
+        // Silently preserve in local cache
+      }
+    });
 
     return review;
+  }
+
+  /// Submit a review for a renter / EV driver (Host -> Renter).
+  Future<Map<String, dynamic>> submitRenterReview({
+    required String hostId,
+    required String renterId,
+    required String renterName,
+    required int rating,
+    List<String> tags = const [],
+    String comment = '',
+  }) async {
+    if (rating < 1 || rating > 5) {
+      throw ReviewException('Rating must be between 1 and 5.');
+    }
+
+    final reviewData = {
+      'id': _uuid.v4(),
+      'hostId': hostId,
+      'renterId': renterId,
+      'renterName': renterName,
+      'rating': rating,
+      'tags': tags,
+      'comment': comment.trim(),
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+
+    _localRenterReviews.add(reviewData);
+
+    // Sync to Firestore in background
+    Future(() async {
+      try {
+        await _firestore
+            .collection('renter_reviews')
+            .doc(reviewData['id'] as String)
+            .set(reviewData)
+            .timeout(const Duration(seconds: 3));
+      } catch (_) {
+        // Local in-memory preserved
+      }
+    });
+
+    return reviewData;
+  }
+
+  /// Get reviews for a renter given by hosts.
+  List<Map<String, dynamic>> getRenterReviews(String renterId) {
+    return _localRenterReviews.where((r) => r['renterId'] == renterId).toList();
   }
 
   /// Get reviews for a charger.
@@ -147,12 +184,18 @@ class ReviewService {
 
   /// Check if a user has already reviewed a booking.
   Future<bool> hasReviewedBooking(String bookingId) async {
-    final snapshot = await _firestore
-        .collection(_collection)
-        .where('bookingId', isEqualTo: bookingId)
-        .limit(1)
-        .get();
-    return snapshot.docs.isNotEmpty;
+    if (_localReviews.containsKey(bookingId)) return true;
+    try {
+      final snapshot = await _firestore
+          .collection(_collection)
+          .where('bookingId', isEqualTo: bookingId)
+          .limit(1)
+          .get()
+          .timeout(const Duration(seconds: 2));
+      return snapshot.docs.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 }
 

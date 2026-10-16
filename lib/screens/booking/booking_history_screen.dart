@@ -265,6 +265,39 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
                   ),
                 ],
               ),
+              if (booking.status == BookingStatus.completed) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/rate-host', extra: {
+                        'isHostRatingRenter': false,
+                        'chargerId': booking.chargerId,
+                        'bookingId': booking.id,
+                        'chargerName': booking.chargerName,
+                        'sessionInfo': '${DateFormat('MMM d').format(booking.startTime)} · ${booking.estimatedKwh.toStringAsFixed(1)} kWh',
+                      }),
+                      icon: const Icon(Icons.star_rounded, size: 16, color: AppColors.primary),
+                      label: Text(
+                        'Rate Host',
+                        style: GoogleFonts.manrope(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

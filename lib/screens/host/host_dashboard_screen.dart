@@ -28,6 +28,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
   List<BookingModel> _liveSessions = [];
   double _todayEarnings = 0.0;
   double _todayKwh = 0.0;
+  bool _hasRatedLastRenter = false;
 
   @override
   void initState() {
@@ -536,13 +537,30 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
 
   Widget _buildRateRenterCard() {
     return GestureDetector(
-      onTap: () {},
+      onTap: () async {
+        final result = await context.push('/host/rate-session', extra: {
+          'isHostRatingRenter': true,
+          'renterName': 'Rahul Sharma',
+          'vehicle': 'Tata Nexon EV (MH 12 AB 1234)',
+          'slot': 'Tower B Slot 4',
+          'sessionInfo': 'Completed yesterday · 7.2 kWh',
+        });
+        if (result == true && mounted) {
+          setState(() {
+            _hasRatedLastRenter = true;
+          });
+        }
+      },
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: AppColors.surfaceDark,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(
+            color: _hasRatedLastRenter
+                ? AppColors.primary.withValues(alpha: 0.5)
+                : AppColors.borderDark,
+          ),
         ),
         child: Row(
           children: [
@@ -550,12 +568,13 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.12),
+                color: (_hasRatedLastRenter ? AppColors.primary : AppColors.warning)
+                    .withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.star,
-                color: AppColors.warning,
+              child: Icon(
+                _hasRatedLastRenter ? Icons.check_circle : Icons.star,
+                color: _hasRatedLastRenter ? AppColors.primary : AppColors.warning,
                 size: 22,
               ),
             ),
@@ -565,7 +584,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Rate your last renter',
+                    _hasRatedLastRenter ? 'Rated: Rahul Sharma' : 'Rate your last renter',
                     style: GoogleFonts.manrope(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -574,17 +593,21 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Share your feedback',
+                    _hasRatedLastRenter
+                        ? '5.0 ★ Rating submitted · Tap to edit'
+                        : 'Rahul S. (Tata Nexon EV) · Share feedback',
                     style: GoogleFonts.manrope(
                       fontSize: 13,
-                      color: AppColors.textSecondary,
+                      color: _hasRatedLastRenter
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
+            Icon(
+              _hasRatedLastRenter ? Icons.edit : Icons.chevron_right,
               color: AppColors.textMuted,
               size: 24,
             ),

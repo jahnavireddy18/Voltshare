@@ -439,6 +439,18 @@ class BookingDetailsScreen extends StatelessWidget {
             // Action Buttons
             if (isCompleted) ...[
               VsButton.fullWidth(
+                label: 'Rate Host & Charger',
+                icon: Icons.star_rate_rounded,
+                onPressed: () => context.push('/rate-host', extra: {
+                  'isHostRatingRenter': false,
+                  'chargerId': booking.chargerId,
+                  'bookingId': booking.id,
+                  'chargerName': booking.chargerName,
+                  'sessionInfo': '${DateFormat('MMM d, yyyy').format(booking.startTime)} · ${booking.estimatedKwh.toStringAsFixed(1)} kWh',
+                }),
+              ),
+              const SizedBox(height: 12),
+              VsButton.fullWidth(
                 label: 'View / Download Invoice',
                 icon: Icons.receipt_long,
                 onPressed: () => _showInvoiceDialog(context),
